@@ -13,3 +13,8 @@ Thumbs.db
 .worktrees/
 node_modules/
 
+
+# leaked file removed from history 2026-07-18 (key rotated)
+my-agent-app/.env
+*.env
+!*.env.example
