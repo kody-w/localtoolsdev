@@ -2176,6 +2176,251 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <!-- NexusNet: resilient multi-transport P2P (hardened PeerJS -> Trystero -> manual).
+         Keeps QR share + spectate working when the default PeerJS cloud broker is down.
+         Also shipped standalone in nexus-share.html. -->
+    <script>
+    (function (global) {
+      'use strict';
+      var DEFAULT_ICE = [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:global.stun.twilio.com:3478' },
+        { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+        { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+        { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+      ];
+      var DEFAULT_BROKERS = [
+        null,
+        { host: '0.peerjs.com', port: 443, path: '/', secure: true },
+        { host: 'peerjs-server.herokuapp.com', port: 443, path: '/', secure: true }
+      ];
+      var PEERJS_CDN = 'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';
+      var TRYSTERO_CDN = 'https://esm.sh/trystero@0.21.4/torrent';
+
+      function loadScript(src) {
+        return new Promise(function (resolve, reject) {
+          if (document.querySelector('script[data-src="' + src + '"]')) { return resolve(); }
+          var s = document.createElement('script');
+          s.src = src; s.async = true; s.dataset.src = src;
+          s.onload = resolve; s.onerror = function () { reject(new Error('failed to load ' + src)); };
+          document.head.appendChild(s);
+        });
+      }
+      function randomCode(len) {
+        var alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789', out = '';
+        var arr = new Uint32Array(len);
+        (global.crypto || global.msCrypto).getRandomValues(arr);
+        for (var i = 0; i < len; i++) { out += alphabet[arr[i] % alphabet.length]; }
+        return out;
+      }
+
+      function NexusNet(opts) {
+        opts = opts || {};
+        this.appId = opts.appId || 'nexus-share';
+        this.iceServers = opts.iceServers || DEFAULT_ICE;
+        this.brokers = opts.brokers || DEFAULT_BROKERS;
+        this.order = opts.transports || ['peerjs', 'trystero', 'manual'];
+        this.meta = opts.meta || {};
+        this.brokerTimeout = opts.brokerTimeout || 8000;
+        this.connectTimeout = opts.connectTimeout || 12000;
+        this.urlParam = opts.urlParam || 'room';
+        this.onReady = opts.onReady || function () {};
+        this.onStatus = opts.onStatus || function () {};
+        this.onPeerJoin = opts.onPeerJoin || function () {};
+        this.onPeerLeave = opts.onPeerLeave || function () {};
+        this.onData = opts.onData || function () {};
+        this.onManualSignal = opts.onManualSignal || function () {};
+        this.role = null; this.spectator = false; this.roomCode = null;
+        this.activeTransport = null; this._impl = null; this._peers = new Set(); this._destroyed = false;
+      }
+      NexusNet.prototype._status = function (state, msg, transport) {
+        this.onStatus(state, msg || '', transport || this.activeTransport || '');
+      };
+      NexusNet.prototype.shareUrl = function () {
+        return global.location.origin + global.location.pathname + '?' + this.urlParam + '=' + encodeURIComponent(this.roomCode);
+      };
+      NexusNet.prototype.host = function () { this.role = 'host'; this.roomCode = randomCode(6); return this._run(); };
+      NexusNet.prototype.join = function (code, jo) {
+        jo = jo || {}; this.role = 'guest'; this.spectator = !!jo.spectator;
+        this.roomCode = String(code || '').trim().toUpperCase();
+        if (!this.roomCode) { return Promise.reject(new Error('no room code')); }
+        return this._run();
+      };
+      NexusNet.prototype._run = function () {
+        var self = this, i = 0;
+        function next() {
+          if (self._destroyed) { return Promise.resolve(); }
+          if (i >= self.order.length) { self._status('failed', 'All transports failed'); return Promise.reject(new Error('all transports failed')); }
+          var name = self.order[i++];
+          if (name === 'manual') { self._status('manual', 'Using manual signaling', 'manual'); self.activeTransport = 'manual'; return self._manualImpl(); }
+          self._status('connecting', 'Trying ' + name + '…', name);
+          var impl;
+          try { impl = (name === 'peerjs') ? self._peerjsImpl() : self._trysteroImpl(); } catch (e) { return next(); }
+          return impl.ready.then(function () {
+            if (self._destroyed) { impl.destroy(); return; }
+            self.activeTransport = name; self._impl = impl;
+            self._status('connected', 'Connected via ' + name, name);
+            if (self.role === 'host') { self.onReady(self.roomCode, self.shareUrl(), name); }
+          }).catch(function (err) {
+            console.warn('[NexusNet] transport "' + name + '" failed:', err && err.message || err);
+            try { impl && impl.destroy(); } catch (e) {}
+            self._status('retry', name + ' failed — trying next transport', name);
+            return next();
+          });
+        }
+        return next();
+      };
+      NexusNet.prototype.broadcast = function (data) { if (this.spectator) { return; } if (this._impl) { this._impl.broadcast(data); } };
+      NexusNet.prototype.send = function (peerId, data) { if (this._impl) { this._impl.send(peerId, data); } };
+      NexusNet.prototype.peerCount = function () { return this._peers.size; };
+      NexusNet.prototype.leave = function () {
+        this._destroyed = true;
+        if (this._impl) { try { this._impl.destroy(); } catch (e) {} this._impl = null; }
+        this._peers.clear(); this._status('idle', 'Left session', '');
+      };
+      NexusNet.prototype._peerjsImpl = function () {
+        var self = this;
+        var handle = {
+          peer: null, conns: new Map(), destroyed: false,
+          send: function (id, d) { var c = this.conns.get(id); if (c && c.open) { try { c.send(d); } catch (e) {} } },
+          broadcast: function (d) { this.conns.forEach(function (c) { if (c.open) { try { c.send(d); } catch (e) {} } }); },
+          destroy: function () { this.destroyed = true; try { this.peer && this.peer.destroy(); } catch (e) {} }
+        };
+        handle.ready = (async function () {
+          if (!global.Peer) { await loadScript(PEERJS_CDN); }
+          var lastErr = null;
+          for (var b = 0; b < self.brokers.length; b++) {
+            if (handle.destroyed) { return; }
+            try { await self._peerjsTryBroker(handle, self.brokers[b]); return; }
+            catch (e) { lastErr = e; try { handle.peer && handle.peer.destroy(); } catch (_) {} handle.peer = null; }
+          }
+          throw lastErr || new Error('peerjs: all brokers failed');
+        })();
+        return handle;
+      };
+      NexusNet.prototype._peerjsTryBroker = function (handle, broker) {
+        var self = this;
+        return new Promise(function (resolve, reject) {
+          var opts = { config: { iceServers: self.iceServers }, debug: 0 };
+          if (broker) { for (var k in broker) { opts[k] = broker[k]; } }
+          var peer = self.role === 'host' ? new global.Peer(self.roomCode, opts) : new global.Peer(opts);
+          handle.peer = peer;
+          var settled = false;
+          var openTimer = setTimeout(function () { if (!settled) { settled = true; reject(new Error('peerjs open timeout')); } }, self.brokerTimeout);
+          peer.on('open', function () {
+            if (self.role === 'host') { if (!settled) { settled = true; clearTimeout(openTimer); resolve(); } }
+            else {
+              var conn = peer.connect(self.roomCode, { reliable: true, serialization: 'json', metadata: Object.assign({ spectator: self.spectator }, self.meta) });
+              var connTimer = setTimeout(function () { if (!settled) { settled = true; clearTimeout(openTimer); reject(new Error('peerjs connect timeout')); } }, self.connectTimeout);
+              conn.on('open', function () { if (!settled) { settled = true; clearTimeout(openTimer); clearTimeout(connTimer); self._wireConn(handle, conn); resolve(); } });
+            }
+          });
+          peer.on('connection', function (conn) { self._wireConn(handle, conn); });
+          peer.on('error', function (err) {
+            var fatal = ['server-error', 'socket-error', 'socket-closed', 'network', 'browser-incompatible', 'ssl-unavailable', 'unavailable-id', 'peer-unavailable'];
+            if (fatal.indexOf(err.type) !== -1 && !settled) { settled = true; clearTimeout(openTimer); reject(err); }
+          });
+          peer.on('disconnected', function () { if (!handle.destroyed) { try { peer.reconnect(); } catch (e) {} } });
+        });
+      };
+      NexusNet.prototype._wireConn = function (handle, conn) {
+        var self = this, id = conn.peer, meta = conn.metadata || {};
+        function join() { handle.conns.set(id, conn); self._peers.add(id); self.onPeerJoin(id, meta); }
+        if (conn.open) { join(); } else { conn.on('open', join); }
+        conn.on('data', function (d) { self.onData(id, d); });
+        conn.on('close', function () { if (handle.conns.delete(id)) { self._peers.delete(id); self.onPeerLeave(id); } });
+        conn.on('error', function () {});
+      };
+      NexusNet.prototype._trysteroImpl = function () {
+        var self = this;
+        var handle = {
+          room: null, sendFn: null, peers: new Set(), destroyed: false,
+          send: function (id, d) { if (this.sendFn) { try { this.sendFn(d, id); } catch (e) {} } },
+          broadcast: function (d) { if (this.sendFn) { try { this.sendFn(d); } catch (e) {} } },
+          destroy: function () { this.destroyed = true; try { this.room && this.room.leave(); } catch (e) {} }
+        };
+        handle.ready = (async function () {
+          var trystero = await import(TRYSTERO_CDN);
+          if (handle.destroyed) { return; }
+          var room = trystero.joinRoom({ appId: self.appId, rtcConfig: { iceServers: self.iceServers } }, self.roomCode);
+          handle.room = room;
+          var pair = room.makeAction('nx'); handle.sendFn = pair[0]; var getData = pair[1];
+          var metaPair = room.makeAction('nxmeta'); var sendMeta = metaPair[0], getMeta = metaPair[1];
+          var peerMeta = {};
+          getData(function (data, peerId) { self.onData(peerId, data); });
+          getMeta(function (m, peerId) { peerMeta[peerId] = m || {}; });
+          room.onPeerJoin(function (peerId) {
+            handle.peers.add(peerId); self._peers.add(peerId);
+            try { sendMeta(Object.assign({ spectator: self.spectator }, self.meta), peerId); } catch (e) {}
+            setTimeout(function () { self.onPeerJoin(peerId, peerMeta[peerId] || {}); }, 250);
+          });
+          room.onPeerLeave(function (peerId) { handle.peers.delete(peerId); self._peers.delete(peerId); delete peerMeta[peerId]; self.onPeerLeave(peerId); });
+          if (self.role === 'guest') { await self._waitFor(function () { return handle.peers.size > 0; }, self.connectTimeout, 'trystero: no host found on this room'); }
+        })();
+        return handle;
+      };
+      NexusNet.prototype._waitFor = function (cond, timeout, errMsg) {
+        return new Promise(function (resolve, reject) {
+          var start = performance.now();
+          (function poll() {
+            if (cond()) { return resolve(); }
+            if (performance.now() - start > timeout) { return reject(new Error(errMsg || 'timeout')); }
+            setTimeout(poll, 200);
+          })();
+        });
+      };
+      NexusNet.prototype._manualImpl = function () {
+        var self = this;
+        var pc = new RTCPeerConnection({ iceServers: this.iceServers });
+        var channel;
+        var handle = {
+          pc: pc, channel: null, destroyed: false,
+          send: function (id, d) { if (this.channel && this.channel.readyState === 'open') { try { this.channel.send(JSON.stringify(d)); } catch (e) {} } },
+          broadcast: function (d) { this.send(null, d); },
+          destroy: function () { this.destroyed = true; try { pc.close(); } catch (e) {} }
+        };
+        this._impl = handle; this.activeTransport = 'manual';
+        function wireChannel(ch) {
+          handle.channel = ch;
+          ch.onopen = function () { self._peers.add('manual-peer'); self.onPeerJoin('manual-peer', { name: 'Peer' }); self._status('connected', 'Connected via manual signaling', 'manual'); };
+          ch.onmessage = function (ev) { try { self.onData('manual-peer', JSON.parse(ev.data)); } catch (e) {} };
+          ch.onclose = function () { if (self._peers.delete('manual-peer')) { self.onPeerLeave('manual-peer'); } };
+        }
+        function gatherComplete() {
+          return new Promise(function (resolve) {
+            if (pc.iceGatheringState === 'complete') { return resolve(); }
+            function check() { if (pc.iceGatheringState === 'complete') { pc.removeEventListener('icegatheringstatechange', check); resolve(); } }
+            pc.addEventListener('icegatheringstatechange', check); setTimeout(resolve, 3000);
+          });
+        }
+        function encode(desc) { return btoa(JSON.stringify({ t: desc.type, s: desc.sdp })); }
+        function decode(str) { var o = JSON.parse(atob(str.trim())); return { type: o.t, sdp: o.s }; }
+        return (async function () {
+          if (self.role === 'host') {
+            channel = pc.createDataChannel('nexus'); wireChannel(channel);
+            var offer = await pc.createOffer(); await pc.setLocalDescription(offer); await gatherComplete();
+            self.onManualSignal({ role: 'host', step: 'offer', out: encode(pc.localDescription),
+              instructions: 'Send this OFFER code to the person joining. Paste their ANSWER code back here.',
+              onSubmit: async function (answerStr) { try { await pc.setRemoteDescription(decode(answerStr)); return true; } catch (e) { return false; } } });
+          } else {
+            pc.ondatachannel = function (ev) { wireChannel(ev.channel); };
+            self.onManualSignal({ role: 'guest', step: 'await-offer',
+              instructions: 'Paste the OFFER code from the host. You’ll get an ANSWER code to send back.',
+              onSubmit: async function (offerStr) {
+                try {
+                  await pc.setRemoteDescription(decode(offerStr));
+                  var answer = await pc.createAnswer(); await pc.setLocalDescription(answer); await gatherComplete();
+                  self.onManualSignal({ role: 'guest', step: 'answer', out: encode(pc.localDescription), instructions: 'Send this ANSWER code back to the host.' });
+                  return true;
+                } catch (e) { return false; }
+              } });
+          }
+        })();
+      };
+      global.NexusNet = NexusNet;
+      global.NexusNet.randomCode = randomCode;
+    })(window);
+    </script>
     <script>
         // Add FontLoader to THREE namespace
         THREE.FontLoader = class FontLoader extends THREE.Loader {
@@ -4579,160 +4824,108 @@
             }
 
             initializePeer() {
-                // Generate or get peer ID
+                // Resilient transport: hardened PeerJS -> Trystero -> manual, with
+                // automatic fallback. NexusNet keeps the existing data protocol; we
+                // adapt each peer to a lightweight conn shim so the rest of the class
+                // (sendPlayerData / broadcast* / sendWorldState) works unchanged.
                 const urlParams = new URLSearchParams(window.location.search);
                 const hostId = urlParams.get('host');
+                const self = this;
 
-                try {
-                    if (hostId) {
-                        // Joining someone's world
-                        this.roomId = hostId;
-                        this.peer = new Peer();
-
-                        this.peer.on('open', (id) => {
-                            console.log('My peer ID:', id);
-                            console.log('Attempting to join room:', this.roomId);
-                            
-                            // Delay connection attempt to ensure host is ready
-                            setTimeout(() => {
-                                this.connectToHost(this.roomId);
-                            }, 1000);
-                            
-                            this.updateStatus('Connecting...', false);
-                        });
-                    } else {
-                        // Creating a new room
-                        this.isHost = true;
-                        this.peer = new Peer();
-
-                        this.peer.on('open', (id) => {
-                            this.roomId = id;
-                            console.log('Created room with ID:', this.roomId);
-                            this.updateShareUrl();
-                            this.updateStatus('Hosting', true);
-                        });
-                    }
-
-                    // Handle incoming connections
-                    this.peer.on('connection', (conn) => {
-                        console.log('Incoming connection from:', conn.peer);
-                        this.handleNewConnection(conn);
-                    });
-
-                    // Handle errors
-                    this.peer.on('error', (err) => {
-                        console.error('Peer error:', err);
-                        
-                        // Handle specific error types
-                        if (err.type === 'peer-unavailable') {
-                            this.showError('Host not found. Make sure the host is online.');
-                        } else if (err.type === 'network') {
-                            this.showError('Network error. Check your connection.');
-                        } else {
-                            this.showError('Connection error: ' + err.message);
-                        }
-                        
-                        this.updateStatus('Error', false);
-                    });
-
-                    // Handle disconnection
-                    this.peer.on('disconnected', () => {
-                        console.log('Disconnected from peer server');
-                        this.updateStatus('Disconnected', false);
-                        
-                        // Try to reconnect
-                        setTimeout(() => {
-                            if (!this.peer.destroyed) {
-                                console.log('Attempting to reconnect...');
-                                this.peer.reconnect();
-                            }
-                        }, 3000);
-                    });
-
-                } catch (error) {
-                    console.error('Failed to initialize peer:', error);
+                if (typeof NexusNet === 'undefined') {
+                    console.error('NexusNet unavailable');
                     this.showError('Failed to initialize multiplayer');
+                    return;
                 }
-            }
 
-            connectToHost(hostId) {
-                try {
-                    console.log('Connecting to host:', hostId);
-                    
-                    const conn = this.peer.connect(hostId, {
-                        reliable: true,
-                        serialization: 'json',
-                        metadata: {
-                            username: this.generateUsername(),
-                            worldData: this.world.getCurrentWorldData()
+                this.net = new NexusNet({
+                    appId: 'nexusworlds',
+                    urlParam: 'host',
+                    meta: {
+                        username: this.generateUsername(),
+                        worldData: this.world.getCurrentWorldData()
+                    },
+                    onStatus: (state, msg, transport) => {
+                        const t = transport ? ' · ' + transport : '';
+                        let label, connected = false;
+                        switch (state) {
+                            case 'connected': connected = true; label = (self.isHost ? 'Hosting' : 'Connected') + t; break;
+                            case 'connecting': label = 'Connecting…'; break;
+                            case 'retry': label = 'Retrying' + t + '…'; break;
+                            case 'manual': label = 'Manual signaling'; break;
+                            case 'failed': label = 'Connection failed'; break;
+                            default: label = 'Disconnected';
                         }
-                    });
-
-                    // Set connection timeout
-                    const connectionTimeout = setTimeout(() => {
-                        if (conn.open === false) {
-                            console.error('Connection timeout');
-                            this.showError('Connection timeout. Host may be offline.');
-                            conn.close();
-                        }
-                    }, 10000);
-
-                    conn.on('open', () => {
-                        clearTimeout(connectionTimeout);
-                        console.log('Connected to host successfully');
-                        this.updateStatus('Connected', true);
-                    });
-
-                    this.handleNewConnection(conn);
-                } catch (error) {
-                    console.error('Failed to connect to host:', error);
-                    this.showError('Failed to connect to host');
-                }
-            }
-
-            handleNewConnection(conn) {
-                const peerId = conn.peer;
-
-                conn.on('open', () => {
-                    console.log('Connection opened with peer:', peerId);
-                    this.connections.set(peerId, conn);
-
-                    // Send initial player data
-                    this.sendPlayerData(conn);
-
-                    // Create player avatar
-                    this.createPlayerAvatar(peerId, conn.metadata);
-
-                    // Show notification
-                    this.showNotification(`Player joined: ${conn.metadata?.username || 'Anonymous'}`);
-
-                    // Update player count
-                    this.updatePlayerCount();
-
-                    // If we're the host, send world state to new player
-                    if (this.isHost) {
-                        this.sendWorldState(conn);
+                        self.updateStatus(label, connected);
+                    },
+                    onReady: (code) => {
+                        self.roomId = code;
+                        console.log('Created room with code:', code);
+                        self.updateShareUrl();
+                    },
+                    onPeerJoin: (id, meta) => self.onNetPeerJoin(id, meta),
+                    onPeerLeave: (id) => self.onNetPeerLeave(id),
+                    onData: (id, data) => {
+                        try { self.handlePeerData(id, data); }
+                        catch (error) { console.error('Error handling peer data:', error); }
                     }
                 });
 
-                conn.on('data', (data) => {
-                    try {
-                        this.handlePeerData(peerId, data);
-                    } catch (error) {
-                        console.error('Error handling peer data:', error);
-                    }
-                });
+                if (hostId) {
+                    this.isHost = false;
+                    this.roomId = hostId;
+                    this.updateStatus('Connecting…', false);
+                    this.net.join(hostId).catch((err) => {
+                        console.error('Join failed:', err);
+                        this.showError('Host not found or offline. Ask them to reopen the share link.');
+                    });
+                } else {
+                    this.isHost = true;
+                    this.updateStatus('Connecting…', false);
+                    this.net.host().catch((err) => {
+                        console.error('Host failed:', err);
+                        this.showError('Could not start a multiplayer session.');
+                    });
+                }
+            }
 
-                conn.on('close', () => {
-                    console.log('Peer disconnected:', peerId);
-                    this.removePlayer(peerId);
-                    this.connections.delete(peerId);
-                    this.updatePlayerCount();
-                });
+            // Adapt a NexusNet peer id to the conn interface the rest of the class expects.
+            makeConnShim(id, meta) {
+                return {
+                    peer: id,
+                    open: true,
+                    metadata: meta || {},
+                    send: (data) => { this.net && this.net.send(id, data); }
+                };
+            }
 
-                conn.on('error', (err) => {
-                    console.error('Connection error with peer', peerId, ':', err);
-                });
+            onNetPeerJoin(id, meta) {
+                const conn = this.makeConnShim(id, meta);
+                this.connections.set(id, conn);
+
+                // Send initial player data
+                this.sendPlayerData(conn);
+
+                // Create player avatar
+                this.createPlayerAvatar(id, meta);
+
+                // Show notification
+                this.showNotification(`Player joined: ${(meta && meta.username) || 'Anonymous'}`);
+
+                // Update player count
+                this.updatePlayerCount();
+
+                // If we're the host, send world state to the new player
+                if (this.isHost) {
+                    this.sendWorldState(conn);
+                }
+            }
+
+            onNetPeerLeave(id) {
+                console.log('Peer disconnected:', id);
+                this.removePlayer(id);
+                this.connections.delete(id);
+                this.updatePlayerCount();
             }
 
             handlePeerData(peerId, data) {

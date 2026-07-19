@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Nexus Share — Resilient QR Share &amp; Spectate</title>
+<meta name="description" content="Reusable peer-to-peer QR sharing and spectating module with automatic transport fallback (hardened PeerJS, Trystero, manual QR offer/answer). Drop-in replacement for the classic Nexus PeerJS sharing that stopped working.">
+<!-- p2p, webrtc, qr, multiplayer, spectate, peerjs, trystero, share -->
+<style>
+  :root {
+    --bg: #0a0a1e;
+    --panel: rgba(20, 20, 40, 0.92);
+    --border: rgba(255, 255, 255, 0.18);
+    --accent: #8338ec;
+    --accent2: #3a86ff;
+    --good: #06ffa5;
+    --warn: #ffbe0b;
+    --bad: #ff006e;
+    --text: #f2f2f7;
+    --muted: rgba(255, 255, 255, 0.62);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background:
+      radial-gradient(1200px 800px at 80% -10%, rgba(131,56,236,0.25), transparent 60%),
+      radial-gradient(1000px 700px at -10% 110%, rgba(58,134,255,0.22), transparent 60%),
+      var(--bg);
+    color: var(--text);
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    padding: 22px 20px 10px;
+    text-align: center;
+  }
+  header h1 {
+    margin: 0;
+    font-size: clamp(22px, 4vw, 32px);
+    letter-spacing: 0.5px;
+    background: linear-gradient(45deg, #ff006e, #8338ec, #3a86ff, #06ffa5);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  header p { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 16px;
+    padding: 12px 16px 20px;
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+  }
+  @media (max-width: 820px) { main { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+  }
+  .panel h2 { margin: 0 0 12px; font-size: 15px; text-transform: uppercase; letter-spacing: 1.2px; color: var(--muted); }
+
+  button {
+    font: inherit;
+    border: none;
+    border-radius: 10px;
+    padding: 11px 14px;
+    cursor: pointer;
+    color: #fff;
+    background: linear-gradient(45deg, var(--accent), var(--accent2));
+    transition: transform .12s ease, filter .12s ease, opacity .12s;
+    font-weight: 600;
+  }
+  button:hover { filter: brightness(1.12); }
+  button:active { transform: scale(.97); }
+  button.secondary { background: rgba(255,255,255,0.08); border: 1px solid var(--border); }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .row > * { flex: 1; min-width: 0; }
+
+  input, textarea {
+    width: 100%;
+    font: inherit;
+    color: var(--text);
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  textarea { resize: vertical; min-height: 68px; font-size: 12px; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 12px 0 6px; }
+
+  /* status pill */
+  .status {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: 7px 12px; border-radius: 999px;
+    font-size: 13px; font-weight: 600;
+    background: rgba(255,255,255,0.06); border: 1px solid var(--border);
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); box-shadow: 0 0 10px currentColor; }
+  .status[data-state="connected"] { color: var(--good); }
+  .status[data-state="connected"] .dot { background: var(--good); }
+  .status[data-state="connecting"], .status[data-state="retry"], .status[data-state="manual"] { color: var(--warn); }
+  .status[data-state="connecting"] .dot, .status[data-state="retry"] .dot, .status[data-state="manual"] .dot { background: var(--warn); animation: pulse 1s infinite; }
+  .status[data-state="failed"] { color: var(--bad); }
+  .status[data-state="failed"] .dot { background: var(--bad); }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.35;} }
+
+  .transport-tag {
+    display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 6px;
+    background: rgba(58,134,255,0.18); border: 1px solid rgba(58,134,255,0.4); color: #b9d4ff;
+    margin-left: 6px;
+  }
+
+  /* QR */
+  #qr-wrap { text-align: center; }
+  #qr-code { display: inline-flex; justify-content: center; padding: 14px; background: #fff; border-radius: 14px; margin: 6px 0 10px; min-height: 60px; }
+  #qr-code canvas, #qr-code img { border-radius: 8px; display: block; }
+  .share-url { font-size: 12px; color: var(--muted); word-break: break-all; background: rgba(255,255,255,0.06); border-radius: 8px; padding: 8px; }
+  .code-badge { font-size: 26px; letter-spacing: 4px; font-weight: 700; text-align:center; margin: 4px 0 10px; color: var(--good); }
+
+  /* spectate canvas */
+  #stage-wrap { position: relative; }
+  #stage { width: 100%; height: 100%; min-height: 320px; display: block; border-radius: 12px; background: rgba(0,0,0,0.35); border: 1px solid var(--border); cursor: crosshair; touch-action: none; }
+  .stage-hint { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--muted); pointer-events: none; font-size: 14px; padding: 20px; }
+
+  .peers { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+  .peer-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; background: rgba(255,255,255,0.06); border: 1px solid var(--border); font-size: 12px; }
+  .peer-swatch { width: 10px; height: 10px; border-radius: 50%; }
+
+  /* chat */
+  #chat-log { height: 150px; overflow-y: auto; font-size: 13px; display: flex; flex-direction: column; gap: 6px; padding: 4px; }
+  .msg { line-height: 1.35; }
+  .msg b { color: var(--accent2); }
+  .msg.sys { color: var(--muted); font-style: italic; }
+
+  .hidden { display: none !important; }
+  .note { font-size: 12px; color: var(--muted); line-height: 1.5; }
+  details { margin-top: 12px; }
+  summary { cursor: pointer; color: var(--accent2); font-size: 13px; }
+  code { background: rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+  .spectator-badge { display:inline-block; background: rgba(255,190,11,0.15); border:1px solid rgba(255,190,11,0.4); color: var(--warn); font-size:11px; padding:2px 8px; border-radius:6px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Nexus Share</h1>
+  <p>Resilient QR sharing &amp; spectating — auto-fallback across PeerJS, Trystero &amp; manual signaling</p>
+</header>
+
+<main>
+  <!-- LEFT: connection + share -->
+  <section class="panel" id="connect-panel">
+    <h2>Connection</h2>
+    <div class="status" id="status" data-state="idle"><span class="dot"></span><span id="status-text">Idle</span></div>
+
+    <div id="lobby" style="margin-top:16px;">
+      <label for="name-input">Your display name</label>
+      <input id="name-input" maxlength="18" placeholder="Guest">
+
+      <div class="row" style="margin-top:14px;">
+        <button id="host-btn">Host a session</button>
+        <button id="spectate-btn" class="secondary">Spectate</button>
+      </div>
+
+      <label for="code-input" style="margin-top:16px;">Have a code? Join / spectate a session</label>
+      <div class="row">
+        <input id="code-input" placeholder="ROOM CODE" style="flex:2; text-transform:uppercase;">
+        <button id="join-btn" class="secondary" style="flex:1;">Join</button>
+      </div>
+      <p class="note" style="margin-top:8px;">“Spectate” joins read-only — you watch the host’s activity without broadcasting your own cursor.</p>
+    </div>
+
+    <!-- share block (host) -->
+    <div id="share-block" class="hidden" style="margin-top:16px;">
+      <div id="qr-wrap">
+        <div id="qr-code"></div>
+        <div class="code-badge" id="room-code-badge"></div>
+        <div class="share-url" id="share-url"></div>
+        <div class="row" style="margin-top:10px;">
+          <button id="copy-btn" class="secondary">Copy link</button>
+          <button id="leave-btn">Leave</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="leave-only" class="hidden" style="margin-top:16px;">
+      <button id="leave-btn2">Leave session</button>
+    </div>
+
+    <!-- manual signaling fallback -->
+    <div id="manual-block" class="hidden" style="margin-top:16px;">
+      <h2 style="margin-top:0;">Manual signaling</h2>
+      <p class="note" id="manual-instructions"></p>
+      <label id="manual-out-label">Your code — send this to the other device</label>
+      <textarea id="manual-out" readonly></textarea>
+      <div class="row" style="margin-top:6px;">
+        <button id="manual-copy" class="secondary">Copy</button>
+        <button id="manual-qr-btn" class="secondary">Show QR</button>
+      </div>
+      <div id="manual-qr" style="text-align:center; margin-top:8px;"></div>
+      <label id="manual-in-label" style="margin-top:14px;">Paste the code from the other device</label>
+      <textarea id="manual-in" placeholder="Paste here…"></textarea>
+      <button id="manual-submit" style="margin-top:8px; width:100%;">Submit</button>
+    </div>
+
+    <details>
+      <summary>How to reuse this in your own app</summary>
+      <p class="note">
+        The transport lives in <code>window.NexusNet</code>. Minimal usage:
+      </p>
+      <pre class="note" style="white-space:pre-wrap; background:rgba(0,0,0,.3); padding:10px; border-radius:8px;">const net = new NexusNet({
+  appId: 'my-app',
+  meta: { name: 'Alice' },
+  onReady:  (code, url) =&gt; showQR(url),
+  onData:   (peerId, d) =&gt; handle(d),
+  onPeerJoin: id =&gt; {}, onPeerLeave: id =&gt; {},
+  onStatus: (state, msg, transport) =&gt; {}
+});
+net.host();            // or net.join('CODE')
+net.broadcast({ ... }); // or net.send(peerId, {...})</pre>
+    </details>
+  </section>
+
+  <!-- RIGHT: live spectate demo -->
+  <section class="panel" id="stage-panel">
+    <h2>Live Spectate Demo <span id="role-tag"></span></h2>
+    <div id="stage-wrap">
+      <canvas id="stage"></canvas>
+      <div class="stage-hint" id="stage-hint">Host or join a session, then move your cursor here.<br>Everyone connected sees each other’s cursors live.</div>
+    </div>
+    <div class="peers" id="peers"></div>
+
+    <h2 style="margin-top:18px;">Chat</h2>
+    <div id="chat-log" class="panel" style="padding:8px; background:rgba(0,0,0,0.25);"></div>
+    <div class="row" style="margin-top:8px;">
+      <input id="chat-input" placeholder="Message…" style="flex:3;" maxlength="200">
+      <button id="chat-send" style="flex:1;">Send</button>
+    </div>
+  </section>
+</main>
+
+<!-- QR fallback (QRious). Loaded on demand; api.qrserver.com used if it fails. -->
+<script>
+/* =========================================================================
+ *  NexusNet — resilient peer-to-peer transport for QR share + spectate
+ *  -------------------------------------------------------------------------
+ *  Self-contained, drop-in module. Tries multiple transports in order and
+ *  falls back automatically when one fails:
+ *    1. peerjs   — hardened PeerJS: explicit STUN+TURN ICE, broker fallback,
+ *                  retry/backoff. (The classic Nexus transport, made robust.)
+ *    2. trystero — serverless WebRTC over public trackers (no broker to die).
+ *    3. manual   — SDP offer/answer exchanged by hand (QR or copy/paste).
+ *                  Last resort, always works, requires two-way exchange.
+ *
+ *  Public API:
+ *    const net = new NexusNet(opts)
+ *    net.host()            -> Promise; assigns net.roomCode, calls onReady
+ *    net.join(code, {spectator})
+ *    net.broadcast(data)   -> send to all peers
+ *    net.send(peerId, data)
+ *    net.leave()
+ *  Callbacks (all optional): onReady(code,url,transport), onStatus(state,msg,transport),
+ *    onPeerJoin(id,meta), onPeerLeave(id), onData(peerId,data)
+ * ========================================================================= */
+(function (global) {
+  'use strict';
+
+  var DEFAULT_ICE = [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:global.stun.twilio.com:3478' },
+    // Free/open TURN (openrelay by metered.ca) — critical for symmetric NAT / mobile.
+    { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
+    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+  ];
+
+  // PeerJS brokers tried in order. null = the default public cloud (0.peerjs.com).
+  var DEFAULT_BROKERS = [
+    null,
+    { host: '0.peerjs.com', port: 443, path: '/', secure: true },
+    { host: 'peerjs-server.herokuapp.com', port: 443, path: '/', secure: true }
+  ];
+
+  var PEERJS_CDN = 'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';
+  var TRYSTERO_CDN = 'https://esm.sh/trystero@0.21.4/torrent';
+
+  function loadScript(src) {
+    return new Promise(function (resolve, reject) {
+      if (document.querySelector('script[data-src="' + src + '"]')) { return resolve(); }
+      var s = document.createElement('script');
+      s.src = src; s.async = true; s.dataset.src = src;
+      s.onload = resolve; s.onerror = function () { reject(new Error('failed to load ' + src)); };
+      document.head.appendChild(s);
+    });
+  }
+
+  function randomCode(len) {
+    // Ambiguity-free alphabet (no 0/O/1/I).
+    var alphabet = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+    var out = '';
+    var arr = new Uint32Array(len);
+    (global.crypto || global.msCrypto).getRandomValues(arr);
+    for (var i = 0; i < len; i++) { out += alphabet[arr[i] % alphabet.length]; }
+    return out;
+  }
+
+  function NexusNet(opts) {
+    opts = opts || {};
+    this.appId = opts.appId || 'nexus-share';
+    this.iceServers = opts.iceServers || DEFAULT_ICE;
+    this.brokers = opts.brokers || DEFAULT_BROKERS;
+    this.order = opts.transports || ['peerjs', 'trystero', 'manual'];
+    this.meta = opts.meta || {};
+    this.brokerTimeout = opts.brokerTimeout || 8000;
+    this.connectTimeout = opts.connectTimeout || 12000;
+    this.urlParam = opts.urlParam || 'room';
+
+    this.onReady = opts.onReady || function () {};
+    this.onStatus = opts.onStatus || function () {};
+    this.onPeerJoin = opts.onPeerJoin || function () {};
+    this.onPeerLeave = opts.onPeerLeave || function () {};
+    this.onData = opts.onData || function () {};
+    this.onManualSignal = opts.onManualSignal || function () {};
+
+    this.role = null;           // 'host' | 'guest'
+    this.spectator = false;     // guest joined read-only
+    this.roomCode = null;
+    this.activeTransport = null;
+    this._impl = null;
+    this._peers = new Set();
+    this._destroyed = false;
+  }
+
+  NexusNet.prototype._status = function (state, msg, transport) {
+    this.onStatus(state, msg || '', transport || this.activeTransport || '');
+  };
+
+  NexusNet.prototype.shareUrl = function () {
+    var base = global.location.origin + global.location.pathname;
+    return base + '?' + this.urlParam + '=' + encodeURIComponent(this.roomCode);
+  };
+
+  NexusNet.prototype.host = function () {
+    this.role = 'host';
+    this.roomCode = randomCode(6);
+    return this._run();
+  };
+
+  NexusNet.prototype.join = function (code, joinOpts) {
+    joinOpts = joinOpts || {};
+    this.role = 'guest';
+    this.spectator = !!joinOpts.spectator;
+    this.roomCode = String(code || '').trim().toUpperCase();
+    if (!this.roomCode) { return Promise.reject(new Error('no room code')); }
+    return this._run();
+  };
+
+  NexusNet.prototype._run = function () {
+    var self = this;
+    var i = 0;
+    function next() {
+      if (self._destroyed) { return Promise.resolve(); }
+      if (i >= self.order.length) {
+        self._status('failed', 'All transports failed');
+        return Promise.reject(new Error('all transports failed'));
+      }
+      var name = self.order[i++];
+      if (name === 'manual') {
+        self._status('manual', 'Using manual signaling', 'manual');
+        self.activeTransport = 'manual';
+        return self._manualImpl();
+      }
+      self._status('connecting', 'Trying ' + name + '…', name);
+      var impl;
+      try {
+        impl = (name === 'peerjs') ? self._peerjsImpl() : self._trysteroImpl();
+      } catch (e) { return next(); }
+      return impl.ready.then(function () {
+        if (self._destroyed) { impl.destroy(); return; }
+        self.activeTransport = name;
+        self._impl = impl;
+        self._status('connected', 'Connected via ' + name, name);
+        if (self.role === 'host') { self.onReady(self.roomCode, self.shareUrl(), name); }
+      }).catch(function (err) {
+        console.warn('[NexusNet] transport "' + name + '" failed:', err && err.message || err);
+        try { impl && impl.destroy(); } catch (e) {}
+        self._status('retry', name + ' failed — trying next transport', name);
+        return next();
+      });
+    }
+    return next();
+  };
+
+  NexusNet.prototype.broadcast = function (data) {
+    if (this.spectator) { return; } // read-only spectators never emit
+    if (this._impl) { this._impl.broadcast(data); }
+  };
+  NexusNet.prototype.send = function (peerId, data) {
+    if (this._impl) { this._impl.send(peerId, data); }
+  };
+  NexusNet.prototype.peerCount = function () { return this._peers.size; };
+  NexusNet.prototype.leave = function () {
+    this._destroyed = true;
+    if (this._impl) { try { this._impl.destroy(); } catch (e) {} this._impl = null; }
+    this._peers.clear();
+    this._status('idle', 'Left session', '');
+  };
+
+  /* ---------------- PeerJS (hardened) ---------------- */
+  NexusNet.prototype._peerjsImpl = function () {
+    var self = this;
+    var handle = {
+      peer: null, conns: new Map(), destroyed: false,
+      send: function (id, d) { var c = this.conns.get(id); if (c && c.open) { try { c.send(d); } catch (e) {} } },
+      broadcast: function (d) { this.conns.forEach(function (c) { if (c.open) { try { c.send(d); } catch (e) {} } }); },
+      destroy: function () { this.destroyed = true; try { this.peer && this.peer.destroy(); } catch (e) {} }
+    };
+    handle.ready = (async function () {
+      if (!global.Peer) { await loadScript(PEERJS_CDN); }
+      var lastErr = null;
+      for (var b = 0; b < self.brokers.length; b++) {
+        if (handle.destroyed) { return; }
+        try {
+          await self._peerjsTryBroker(handle, self.brokers[b]);
+          return; // success
+        } catch (e) {
+          lastErr = e;
+          try { handle.peer && handle.peer.destroy(); } catch (_) {}
+          handle.peer = null;
+        }
+      }
+      throw lastErr || new Error('peerjs: all brokers failed');
+    })();
+    return handle;
+  };
+
+  NexusNet.prototype._peerjsTryBroker = function (handle, broker) {
+    var self = this;
+    return new Promise(function (resolve, reject) {
+      var opts = { config: { iceServers: self.iceServers }, debug: 0 };
+      if (broker) { for (var k in broker) { opts[k] = broker[k]; } }
+      var peer = self.role === 'host' ? new global.Peer(self.roomCode, opts) : new global.Peer(opts);
+      handle.peer = peer;
+      var settled = false;
+      var openTimer = setTimeout(function () { if (!settled) { settled = true; reject(new Error('peerjs open timeout')); } }, self.brokerTimeout);
+
+      peer.on('open', function () {
+        if (self.role === 'host') {
+          if (!settled) { settled = true; clearTimeout(openTimer); resolve(); }
+        } else {
+          // Guest: connect to the host peer (== room code).
+          var conn = peer.connect(self.roomCode, {
+            reliable: true, serialization: 'json',
+            metadata: Object.assign({ spectator: self.spectator }, self.meta)
+          });
+          var connTimer = setTimeout(function () { if (!settled) { settled = true; clearTimeout(openTimer); reject(new Error('peerjs connect timeout')); } }, self.connectTimeout);
+          conn.on('open', function () {
+            if (!settled) { settled = true; clearTimeout(openTimer); clearTimeout(connTimer); self._wireConn(handle, conn); resolve(); }
+          });
+        }
+      });
+
+      peer.on('connection', function (conn) { self._wireConn(handle, conn); });
+
+      peer.on('error', function (err) {
+        var fatal = ['server-error', 'socket-error', 'socket-closed', 'network',
+          'browser-incompatible', 'ssl-unavailable', 'unavailable-id', 'peer-unavailable'];
+        if (fatal.indexOf(err.type) !== -1 && !settled) {
+          settled = true; clearTimeout(openTimer); reject(err);
+        }
+        // negotiation/webrtc errors on a single conn are non-fatal; ignore.
+      });
+
+      peer.on('disconnected', function () {
+        if (!handle.destroyed) { try { peer.reconnect(); } catch (e) {} }
+      });
+    });
+  };
+
+  NexusNet.prototype._wireConn = function (handle, conn) {
+    var self = this;
+    var id = conn.peer;
+    var meta = conn.metadata || {};
+    function join() {
+      handle.conns.set(id, conn);
+      self._peers.add(id);
+      self.onPeerJoin(id, meta);
+    }
+    if (conn.open) { join(); } else { conn.on('open', join); }
+    conn.on('data', function (d) { self.onData(id, d); });
+    conn.on('close', function () {
+      if (handle.conns.delete(id)) { self._peers.delete(id); self.onPeerLeave(id); }
+    });
+    conn.on('error', function () {});
+  };
+
+  /* ---------------- Trystero (serverless) ---------------- */
+  NexusNet.prototype._trysteroImpl = function () {
+    var self = this;
+    var handle = {
+      room: null, sendFn: null, peers: new Set(), destroyed: false,
+      send: function (id, d) { if (this.sendFn) { try { this.sendFn(d, id); } catch (e) {} } },
+      broadcast: function (d) { if (this.sendFn) { try { this.sendFn(d); } catch (e) {} } },
+      destroy: function () { this.destroyed = true; try { this.room && this.room.leave(); } catch (e) {} }
+    };
+    handle.ready = (async function () {
+      var trystero = await import(TRYSTERO_CDN);
+      if (handle.destroyed) { return; }
+      var room = trystero.joinRoom(
+        { appId: self.appId, rtcConfig: { iceServers: self.iceServers } },
+        self.roomCode
+      );
+      handle.room = room;
+      var pair = room.makeAction('nx');
+      var sendData = pair[0], getData = pair[1];
+      handle.sendFn = sendData;
+
+      // Exchange identity so onPeerJoin can carry meta (Trystero doesn't).
+      var metaPair = room.makeAction('nxmeta');
+      var sendMeta = metaPair[0], getMeta = metaPair[1];
+      var peerMeta = {};
+
+      getData(function (data, peerId) { self.onData(peerId, data); });
+      getMeta(function (m, peerId) { peerMeta[peerId] = m || {}; });
+
+      room.onPeerJoin(function (peerId) {
+        handle.peers.add(peerId); self._peers.add(peerId);
+        try { sendMeta(Object.assign({ spectator: self.spectator }, self.meta), peerId); } catch (e) {}
+        // Give meta a beat to arrive, then surface the join.
+        setTimeout(function () { self.onPeerJoin(peerId, peerMeta[peerId] || {}); }, 250);
+      });
+      room.onPeerLeave(function (peerId) {
+        handle.peers.delete(peerId); self._peers.delete(peerId);
+        delete peerMeta[peerId]; self.onPeerLeave(peerId);
+      });
+
+      if (self.role === 'guest') {
+        // Only "ready" once we actually see the host (a peer) in the room.
+        await self._waitFor(function () { return handle.peers.size > 0; }, self.connectTimeout, 'trystero: no host found on this room');
+      }
+    })();
+    return handle;
+  };
+
+  NexusNet.prototype._waitFor = function (cond, timeout, errMsg) {
+    return new Promise(function (resolve, reject) {
+      var start = performance.now();
+      (function poll() {
+        if (cond()) { return resolve(); }
+        if (performance.now() - start > timeout) { return reject(new Error(errMsg || 'timeout')); }
+        setTimeout(poll, 200);
+      })();
+    });
+  };
+
+  /* ---------------- Manual (SDP offer/answer) ---------------- */
+  NexusNet.prototype._manualImpl = function () {
+    var self = this;
+    var pc = new RTCPeerConnection({ iceServers: this.iceServers });
+    var channel;
+    var handle = {
+      pc: pc, channel: null, destroyed: false,
+      send: function (id, d) { if (this.channel && this.channel.readyState === 'open') { try { this.channel.send(JSON.stringify(d)); } catch (e) {} } },
+      broadcast: function (d) { this.send(null, d); },
+      destroy: function () { this.destroyed = true; try { pc.close(); } catch (e) {} }
+    };
+    this._impl = handle;
+    this.activeTransport = 'manual';
+
+    function wireChannel(ch) {
+      handle.channel = ch;
+      ch.onopen = function () {
+        self._peers.add('manual-peer');
+        self.onPeerJoin('manual-peer', { name: 'Peer' });
+        self._status('connected', 'Connected via manual signaling', 'manual');
+      };
+      ch.onmessage = function (ev) { try { self.onData('manual-peer', JSON.parse(ev.data)); } catch (e) {} };
+      ch.onclose = function () { if (self._peers.delete('manual-peer')) { self.onPeerLeave('manual-peer'); } };
+    }
+
+    function gatherComplete() {
+      return new Promise(function (resolve) {
+        if (pc.iceGatheringState === 'complete') { return resolve(); }
+        function check() { if (pc.iceGatheringState === 'complete') { pc.removeEventListener('icegatheringstatechange', check); resolve(); } }
+        pc.addEventListener('icegatheringstatechange', check);
+        setTimeout(resolve, 3000); // don't wait forever for trickle
+      });
+    }
+    function encode(desc) { return btoa(JSON.stringify({ t: desc.type, s: desc.sdp })); }
+    function decode(str) { var o = JSON.parse(atob(str.trim())); return { type: o.t, sdp: o.s }; }
+
+    return (async function () {
+      if (self.role === 'host') {
+        channel = pc.createDataChannel('nexus');
+        wireChannel(channel);
+        var offer = await pc.createOffer();
+        await pc.setLocalDescription(offer);
+        await gatherComplete();
+        // Host shows its offer, waits for the guest's answer.
+        self.onManualSignal({
+          role: 'host', step: 'offer', out: encode(pc.localDescription),
+          instructions: 'Send this OFFER code to the person joining. Paste their ANSWER code back here.',
+          onSubmit: async function (answerStr) {
+            try { await pc.setRemoteDescription(decode(answerStr)); return true; }
+            catch (e) { return false; }
+          }
+        });
+      } else {
+        pc.ondatachannel = function (ev) { wireChannel(ev.channel); };
+        // Guest waits for the host's offer, then produces an answer.
+        self.onManualSignal({
+          role: 'guest', step: 'await-offer',
+          instructions: 'Paste the OFFER code from the host. You’ll get an ANSWER code to send back.',
+          onSubmit: async function (offerStr) {
+            try {
+              await pc.setRemoteDescription(decode(offerStr));
+              var answer = await pc.createAnswer();
+              await pc.setLocalDescription(answer);
+              await gatherComplete();
+              self.onManualSignal({ role: 'guest', step: 'answer', out: encode(pc.localDescription),
+                instructions: 'Send this ANSWER code back to the host.' });
+              return true;
+            } catch (e) { return false; }
+          }
+        });
+      }
+    })();
+  };
+
+  global.NexusNet = NexusNet;
+  global.NexusNet.randomCode = randomCode;
+})(window);
+</script>
+
+<script>
+/* =========================================================================
+ *  Demo app — a live "spectate" sandbox built on NexusNet.
+ *  Cursors + chat are synced across everyone in the room, demonstrating the
+ *  QR-share + spectate flow that used to run on bare PeerJS.
+ * ========================================================================= */
+(function () {
+  'use strict';
+  var $ = function (id) { return document.getElementById(id); };
+
+  // --- persistent identity ---
+  var STORE_KEY = 'nexus-share.name';
+  var myName = localStorage.getItem(STORE_KEY) || ('Guest' + Math.floor(Math.random() * 900 + 100));
+  $('name-input').value = myName;
+  $('name-input').addEventListener('input', function () {
+    myName = this.value.trim() || 'Guest';
+    localStorage.setItem(STORE_KEY, myName);
+    if (net) { net.broadcast({ type: 'hello', name: myName, color: myColor }); }
+  });
+
+  var myColor = 'hsl(' + Math.floor(Math.random() * 360) + ',80%,60%)';
+  var net = null;
+  var peers = {};     // id -> {name, color, x, y, spectator}
+  var isSpectator = false;
+
+  // ---------- status ----------
+  function setStatus(state, msg, transport) {
+    var el = $('status');
+    el.dataset.state = state;
+    $('status-text').textContent = msg + (transport ? '' : '');
+    var existing = el.querySelector('.transport-tag');
+    if (existing) { existing.remove(); }
+    if (transport && state === 'connected') {
+      var tag = document.createElement('span');
+      tag.className = 'transport-tag';
+      tag.textContent = transport;
+      el.appendChild(tag);
+    }
+  }
+
+  // ---------- QR ----------
+  function renderQR(containerId, url, size) {
+    var container = $(containerId);
+    container.innerHTML = '';
+    size = size || 220;
+    function fallbackImg() {
+      var img = new Image();
+      img.width = size; img.height = size; img.alt = 'QR code';
+      img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=' + size + 'x' + size + '&ecc=M&data=' + encodeURIComponent(url);
+      container.appendChild(img);
+    }
+    function draw() {
+      try {
+        var canvas = document.createElement('canvas');
+        container.appendChild(canvas);
+        new window.QRious({ element: canvas, value: url, size: size, level: 'M', background: 'white', foreground: 'black' });
+      } catch (e) { container.innerHTML = ''; fallbackImg(); }
+    }
+    if (window.QRious) { draw(); return; }
+    var s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js';
+    s.onload = draw;
+    s.onerror = fallbackImg;
+    document.head.appendChild(s);
+  }
+
+  // ---------- net wiring ----------
+  function makeNet() {
+    return new NexusNet({
+      appId: 'nexus-share-demo',
+      meta: { name: myName, color: myColor },
+      onStatus: setStatus,
+      onReady: function (code, url, transport) {
+        $('lobby').classList.add('hidden');
+        $('share-block').classList.remove('hidden');
+        $('room-code-badge').textContent = code;
+        $('share-url').textContent = url;
+        renderQR('qr-code', url, 220);
+      },
+      onPeerJoin: function (id, meta) {
+        peers[id] = { name: (meta && meta.name) || 'Peer', color: (meta && meta.color) || '#888', x: -1, y: -1, spectator: meta && meta.spectator };
+        // Greet the newcomer with our identity + current state.
+        net.send(id, { type: 'hello', name: myName, color: myColor });
+        logMsg(null, (peers[id].name) + ' joined' + (peers[id].spectator ? ' (spectating)' : ''), true);
+        renderPeers();
+      },
+      onPeerLeave: function (id) {
+        if (peers[id]) { logMsg(null, peers[id].name + ' left', true); delete peers[id]; renderPeers(); drawStage(); }
+      },
+      onData: function (id, d) {
+        if (!d || !d.type) { return; }
+        if (d.type === 'hello') {
+          peers[id] = peers[id] || { x: -1, y: -1 };
+          peers[id].name = d.name; peers[id].color = d.color;
+          renderPeers();
+        } else if (d.type === 'cursor') {
+          if (!peers[id]) { peers[id] = { name: 'Peer', color: '#888' }; }
+          peers[id].x = d.x; peers[id].y = d.y;
+          drawStage();
+        } else if (d.type === 'chat') {
+          logMsg((peers[id] && peers[id].name) || 'Peer', d.text);
+        }
+      },
+      onManualSignal: showManual
+    });
+  }
+
+  function enterConnectedUI(spectator) {
+    isSpectator = spectator;
+    $('role-tag').innerHTML = spectator ? '<span class="spectator-badge">SPECTATOR</span>' : '';
+    $('stage-hint').classList.add('hidden');
+    if (spectator) {
+      $('stage').style.cursor = 'default';
+      $('stage-hint').textContent = 'Spectating — watching the host live.';
+    }
+  }
+
+  // ---------- controls ----------
+  $('host-btn').addEventListener('click', function () {
+    net = makeNet();
+    setStatus('connecting', 'Starting host…', '');
+    net.host().then(function () { enterConnectedUI(false); }).catch(function () {});
+  });
+
+  function doJoin(spectator) {
+    var code = $('code-input').value.trim().toUpperCase();
+    if (!code) { $('code-input').focus(); return; }
+    net = makeNet();
+    $('lobby').classList.add('hidden');
+    $('leave-only').classList.remove('hidden');
+    setStatus('connecting', (spectator ? 'Spectating' : 'Joining') + ' ' + code + '…', '');
+    net.join(code, { spectator: spectator })
+      .then(function () { enterConnectedUI(spectator); })
+      .catch(function () { setStatus('failed', 'Could not connect'); });
+  }
+  $('join-btn').addEventListener('click', function () { doJoin(false); });
+  $('spectate-btn').addEventListener('click', function () {
+    if (!$('code-input').value.trim()) { $('code-input').focus(); setStatus('idle', 'Enter a code to spectate'); return; }
+    doJoin(true);
+  });
+  $('code-input').addEventListener('keydown', function (e) { if (e.key === 'Enter') { doJoin(false); } });
+
+  function leave() {
+    if (net) { net.leave(); net = null; }
+    peers = {};
+    location.href = location.origin + location.pathname; // clean reset
+  }
+  $('leave-btn').addEventListener('click', leave);
+  $('leave-btn2').addEventListener('click', leave);
+  $('copy-btn').addEventListener('click', function () {
+    navigator.clipboard.writeText($('share-url').textContent).then(function () {
+      var b = $('copy-btn'); b.textContent = 'Copied!'; setTimeout(function () { b.textContent = 'Copy link'; }, 1500);
+    }).catch(function () {});
+  });
+
+  // ---------- manual signaling UI ----------
+  var manualSubmitFn = null;
+  function showManual(sig) {
+    $('manual-block').classList.remove('hidden');
+    $('manual-instructions').textContent = sig.instructions || '';
+    if (sig.out) {
+      $('manual-out').value = sig.out;
+      $('manual-out-label').classList.remove('hidden');
+    } else {
+      $('manual-out').value = '';
+    }
+    if (sig.onSubmit) { manualSubmitFn = sig.onSubmit; }
+    if (sig.step === 'answer') {
+      // guest finished; hide the input half
+      $('manual-in-label').textContent = 'Done — waiting for host to accept.';
+      $('manual-in').classList.add('hidden');
+      $('manual-submit').classList.add('hidden');
+    }
+  }
+  $('manual-copy').addEventListener('click', function () {
+    navigator.clipboard.writeText($('manual-out').value).then(function () {
+      var b = $('manual-copy'); b.textContent = 'Copied!'; setTimeout(function () { b.textContent = 'Copy'; }, 1500);
+    }).catch(function () {});
+  });
+  $('manual-qr-btn').addEventListener('click', function () {
+    var val = $('manual-out').value;
+    if (val.length > 1200) { $('manual-qr').innerHTML = '<span class="note">Code too long for a reliable QR — use Copy instead.</span>'; return; }
+    renderQR('manual-qr', val, 260);
+  });
+  $('manual-submit').addEventListener('click', function () {
+    var val = $('manual-in').value.trim();
+    if (!val || !manualSubmitFn) { return; }
+    Promise.resolve(manualSubmitFn(val)).then(function (ok) {
+      if (!ok) { setStatus('failed', 'Invalid code — check and retry', 'manual'); }
+    });
+  });
+
+  // ---------- spectate stage (cursors) ----------
+  var stage = $('stage');
+  var ctx = stage.getContext('2d');
+  function resizeStage() {
+    var r = stage.getBoundingClientRect();
+    stage.width = r.width * devicePixelRatio;
+    stage.height = Math.max(320, r.height) * devicePixelRatio;
+    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    drawStage();
+  }
+  window.addEventListener('resize', resizeStage);
+
+  function drawStage() {
+    var w = stage.width / devicePixelRatio, h = stage.height / devicePixelRatio;
+    ctx.clearRect(0, 0, w, h);
+    Object.keys(peers).forEach(function (id) {
+      var p = peers[id];
+      if (p.x < 0 || p.y < 0) { return; }
+      drawCursor(p.x * w, p.y * h, p.color, p.name);
+    });
+  }
+  function drawCursor(x, y, color, name) {
+    ctx.save();
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(x, y); ctx.lineTo(x, y + 16); ctx.lineTo(x + 5, y + 12); ctx.lineTo(x + 9, y + 20);
+    ctx.lineTo(x + 12, y + 18); ctx.lineTo(x + 8, y + 11); ctx.lineTo(x + 15, y + 11);
+    ctx.closePath(); ctx.fill();
+    ctx.font = '12px system-ui'; ctx.fillStyle = 'rgba(0,0,0,0.55)';
+    var tw = ctx.measureText(name).width;
+    ctx.fillRect(x + 14, y + 14, tw + 10, 18);
+    ctx.fillStyle = color; ctx.fillText(name, x + 19, y + 27);
+    ctx.restore();
+  }
+
+  var lastSent = 0;
+  function onMove(clientX, clientY) {
+    if (!net || isSpectator) { return; }
+    var r = stage.getBoundingClientRect();
+    var nx = (clientX - r.left) / r.width;
+    var ny = (clientY - r.top) / r.height;
+    if (nx < 0 || nx > 1 || ny < 0 || ny > 1) { return; }
+    var now = performance.now();
+    if (now - lastSent < 40) { return; } // ~25fps throttle
+    lastSent = now;
+    net.broadcast({ type: 'cursor', x: nx, y: ny });
+  }
+  stage.addEventListener('mousemove', function (e) { onMove(e.clientX, e.clientY); });
+  stage.addEventListener('touchmove', function (e) {
+    if (e.touches[0]) { onMove(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); }
+  }, { passive: false });
+
+  // ---------- chat ----------
+  function logMsg(who, text, sys) {
+    var log = $('chat-log');
+    var div = document.createElement('div');
+    div.className = 'msg' + (sys ? ' sys' : '');
+    if (sys) { div.textContent = text; }
+    else { div.innerHTML = '<b></b> '; div.querySelector('b').textContent = (who || 'me') + ':'; div.append(text); }
+    log.appendChild(div);
+    log.scrollTop = log.scrollHeight;
+  }
+  function sendChat() {
+    var val = $('chat-input').value.trim();
+    if (!val || !net) { return; }
+    net.broadcast({ type: 'chat', text: val });
+    logMsg(myName + ' (you)', val);
+    $('chat-input').value = '';
+  }
+  $('chat-send').addEventListener('click', sendChat);
+  $('chat-input').addEventListener('keydown', function (e) { if (e.key === 'Enter') { sendChat(); } });
+
+  // ---------- peers list ----------
+  function renderPeers() {
+    var box = $('peers');
+    box.innerHTML = '';
+    var ids = Object.keys(peers);
+    var self = document.createElement('span');
+    self.className = 'peer-chip';
+    self.innerHTML = '<span class="peer-swatch"></span>';
+    self.querySelector('.peer-swatch').style.background = myColor;
+    self.append((myName + ' (you)') + (isSpectator ? ' · spectating' : ''));
+    box.appendChild(self);
+    ids.forEach(function (id) {
+      var p = peers[id];
+      var chip = document.createElement('span');
+      chip.className = 'peer-chip';
+      chip.innerHTML = '<span class="peer-swatch"></span>';
+      chip.querySelector('.peer-swatch').style.background = p.color || '#888';
+      chip.append((p.name || 'Peer') + (p.spectator ? ' · spectating' : ''));
+      box.appendChild(chip);
+    });
+  }
+
+  // ---------- auto-join from ?room= ----------
+  window.addEventListener('load', function () {
+    resizeStage();
+    renderPeers();
+    var params = new URLSearchParams(location.search);
+    var room = params.get('room');
+    if (room) {
+      $('code-input').value = room.toUpperCase();
+      var spectate = params.get('spectate') === '1';
+      doJoin(spectate);
+    }
+  });
+})();
+</script>
+</body>
+</html>
