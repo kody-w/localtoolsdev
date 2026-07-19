@@ -204,9 +204,12 @@
         <button id="manual-qr-btn" class="secondary">Show QR</button>
       </div>
       <div id="manual-qr" style="text-align:center; margin-top:8px;"></div>
-      <label id="manual-in-label" style="margin-top:14px;">Paste the code from the other device</label>
-      <textarea id="manual-in" placeholder="Paste here…"></textarea>
-      <button id="manual-submit" style="margin-top:8px; width:100%;">Submit</button>
+      <label id="manual-in-label" style="margin-top:14px;">Scan or paste the code from the other device</label>
+      <textarea id="manual-in" placeholder="Paste here, or tap Scan…"></textarea>
+      <div class="row" style="margin-top:8px;">
+        <button id="manual-scan" class="secondary">Scan QR</button>
+        <button id="manual-submit">Submit</button>
+      </div>
     </div>
 
     <details>
@@ -310,8 +313,165 @@ net.broadcast({ ... }); // or net.send(peerId, {...})</pre>
     return out;
   }
 
+  /* ---- Manual-signaling helpers: shrink an SDP so it fits a scannable QR ----
+     A raw offer/answer is 1.5–4 KB — too big for a phone-to-phone QR scan.
+     We deflate + base64, which alone cuts a ~2.5 KB SDP to well under 1 KB.
+     NOTE: we deliberately KEEP mDNS (.local) host candidates. They're the only
+     working path when two devices share a LAN with no internet/broker — the
+     exact situation the manual/QR fallback exists for. Compression makes their
+     size cost negligible, and they're harmlessly ignored across networks. */
+  function b64FromBytes(bytes) { var s = ''; for (var i = 0; i < bytes.length; i++) { s += String.fromCharCode(bytes[i]); } return btoa(s); }
+  function bytesFromB64(b64) { var bin = atob(b64), out = new Uint8Array(bin.length); for (var i = 0; i < bin.length; i++) { out[i] = bin.charCodeAt(i); } return out; }
+
+  async function packSignal(desc) {
+    var json = JSON.stringify({ t: desc.type, s: desc.sdp });
+    if (global.CompressionStream) {
+      try {
+        var cs = new CompressionStream('deflate-raw');
+        var w = cs.writable.getWriter();
+        w.write(new TextEncoder().encode(json)); w.close();
+        var buf = await new Response(cs.readable).arrayBuffer();
+        return 'C' + b64FromBytes(new Uint8Array(buf));
+      } catch (e) { /* fall through to plain */ }
+    }
+    return 'P' + btoa(unescape(encodeURIComponent(json)));
+  }
+
+  async function unpackSignal(str) {
+    str = (str || '').trim();
+    var tag = str.charAt(0), body = str.slice(1), json;
+    if (tag === 'C' && global.DecompressionStream) {
+      var ds = new DecompressionStream('deflate-raw');
+      var w = ds.writable.getWriter();
+      w.write(bytesFromB64(body)); w.close();
+      var buf = await new Response(ds.readable).arrayBuffer();
+      json = new TextDecoder().decode(buf);
+    } else if (tag === 'P') {
+      json = decodeURIComponent(escape(atob(body)));
+    } else {
+      json = decodeURIComponent(escape(atob(str))); // legacy: plain base64
+    }
+    var o = JSON.parse(json);
+    return { type: o.t, sdp: o.s };
+  }
+
+  function renderQRInto(container, text, size) {
+    container.innerHTML = ''; size = size || 240;
+    function fallback() {
+      var img = new Image(); img.width = size; img.height = size; img.alt = 'QR';
+      img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=' + size + 'x' + size + '&ecc=L&data=' + encodeURIComponent(text);
+      container.appendChild(img);
+    }
+    function draw() {
+      try { var c = document.createElement('canvas'); container.appendChild(c); new global.QRious({ element: c, value: text, size: size, level: 'L', background: 'white', foreground: 'black' }); }
+      catch (e) { container.innerHTML = ''; fallback(); }
+    }
+    if (global.QRious) { draw(); return; }
+    loadScript('https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js').then(draw, fallback);
+  }
+
+  // Camera QR scanner. Uses the native BarcodeDetector where available and
+  // lazy-loads jsQR as a fallback. Opens a fullscreen overlay; calls onResult
+  // with the decoded string. Returns { stop() }.
+  function scanQR(onResult, onCancel) {
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483600;background:rgba(0,0,0,.92);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:16px;';
+    var label = document.createElement('div');
+    label.textContent = 'Point the camera at the other device’s QR code';
+    label.style.cssText = 'color:#fff;font:14px system-ui;text-align:center;';
+    var video = document.createElement('video');
+    video.setAttribute('playsinline', ''); video.muted = true;
+    video.style.cssText = 'max-width:92vw;max-height:66vh;border-radius:14px;background:#000;';
+    var cancel = document.createElement('button');
+    cancel.textContent = 'Cancel';
+    cancel.style.cssText = 'padding:10px 18px;border:0;border-radius:10px;background:#333;color:#fff;font:600 14px system-ui;cursor:pointer;';
+    overlay.appendChild(label); overlay.appendChild(video); overlay.appendChild(cancel);
+    document.body.appendChild(overlay);
+
+    var stream = null, raf = 0, stopped = false, detector = null, jsqrReady = false;
+    var canvas = document.createElement('canvas'), ctx = canvas.getContext('2d', { willReadFrequently: true });
+    function stop() {
+      if (stopped) { return; } stopped = true;
+      if (raf) { cancelAnimationFrame(raf); }
+      if (stream) { stream.getTracks().forEach(function (t) { t.stop(); }); }
+      overlay.remove();
+    }
+    cancel.onclick = function () { stop(); if (onCancel) { onCancel(); } };
+
+    (async function () {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        video.srcObject = stream; await video.play();
+      } catch (e) { label.textContent = 'Camera unavailable — paste the code instead.'; return; }
+      if ('BarcodeDetector' in global) { try { detector = new global.BarcodeDetector({ formats: ['qr_code'] }); } catch (e) {} }
+      if (!detector) { try { await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js'); jsqrReady = !!global.jsQR; } catch (e) {} }
+      (function tick() {
+        if (stopped) { return; }
+        raf = requestAnimationFrame(tick);
+        if (video.readyState < 2) { return; }
+        if (detector) {
+          detector.detect(video).then(function (codes) {
+            if (codes && codes[0] && codes[0].rawValue) { var v = codes[0].rawValue; stop(); onResult(v); }
+          }).catch(function () {});
+        } else if (jsqrReady) {
+          canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          var img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          var code = global.jsQR(img.data, img.width, img.height);
+          if (code && code.data) { stop(); onResult(code.data); }
+        }
+      })();
+    })();
+    return { stop: stop };
+  }
+
+  // Self-contained fallback modal used when the app supplies no onManualSignal.
+  function buildManualOverlay() {
+    function btnCss(primary) { return 'flex:1;padding:10px;border:0;border-radius:10px;cursor:pointer;font:600 14px system-ui;color:#fff;' + (primary ? 'background:linear-gradient(45deg,#8338ec,#3a86ff);' : 'background:rgba(255,255,255,.1);'); }
+    function h(tag, css, txt) { var e = document.createElement(tag); if (css) { e.style.cssText = css; } if (txt != null) { e.textContent = txt; } return e; }
+    var wrap = h('div', 'position:fixed;inset:0;z-index:2147483500;background:rgba(6,6,20,.92);display:flex;align-items:center;justify-content:center;padding:16px;font:14px system-ui,sans-serif;color:#f2f2f7;');
+    var card = h('div', 'background:#141428;border:1px solid rgba(255,255,255,.18);border-radius:16px;max-width:420px;width:100%;max-height:90vh;overflow:auto;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.5);');
+    var title = h('h3', 'margin:0 0 6px;font-size:18px;', 'Manual connection');
+    var instr = h('p', 'margin:0 0 14px;color:rgba(255,255,255,.65);line-height:1.5;', '');
+    var outLabel = h('div', 'font-size:12px;color:rgba(255,255,255,.6);margin:0 0 6px;', 'Your code — send it to the other device');
+    var out = h('textarea', 'width:100%;box-sizing:border-box;min-height:60px;font:12px ui-monospace,Menlo,monospace;background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:10px;'); out.readOnly = true;
+    var qrBox = h('div', 'text-align:center;margin:10px 0;');
+    var outRow = h('div', 'display:flex;gap:8px;margin-bottom:14px;');
+    var copyBtn = h('button', btnCss(), 'Copy'); var qrBtn = h('button', btnCss(), 'Show QR');
+    outRow.appendChild(copyBtn); outRow.appendChild(qrBtn);
+    var inLabel = h('div', 'font-size:12px;color:rgba(255,255,255,.6);margin:0 0 6px;', 'Paste or scan the code from the other device');
+    var input = h('textarea', 'width:100%;box-sizing:border-box;min-height:60px;font:12px ui-monospace,Menlo,monospace;background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:10px;padding:10px;'); input.placeholder = 'Paste here…';
+    var inRow = h('div', 'display:flex;gap:8px;margin-top:8px;');
+    var scanBtn = h('button', btnCss(), 'Scan QR'); var submitBtn = h('button', btnCss(true), 'Submit');
+    inRow.appendChild(scanBtn); inRow.appendChild(submitBtn);
+    var err = h('div', 'color:#ff6b6b;font-size:12px;margin-top:8px;min-height:16px;', '');
+    [title, instr, outLabel, out, qrBox, outRow, inLabel, input, inRow, err].forEach(function (e) { card.appendChild(e); });
+    wrap.appendChild(card); document.body.appendChild(wrap);
+
+    copyBtn.onclick = function () { navigator.clipboard.writeText(out.value).then(function () { copyBtn.textContent = 'Copied!'; setTimeout(function () { copyBtn.textContent = 'Copy'; }, 1500); }).catch(function () {}); };
+    qrBtn.onclick = function () { if (out.value.length > 2200) { qrBox.textContent = 'Code too long for a QR — use Copy.'; return; } renderQRInto(qrBox, out.value, 260); };
+
+    var api = {
+      onSubmit: null,
+      setInstructions: function (t) { instr.textContent = t || ''; },
+      setOut: function (v) { out.value = v; outLabel.style.display = ''; out.style.display = ''; outRow.style.display = 'flex'; if (v.length <= 2200) { renderQRInto(qrBox, v, 240); } else { qrBox.innerHTML = ''; } },
+      hideOut: function () { outLabel.style.display = 'none'; out.style.display = 'none'; outRow.style.display = 'none'; qrBox.innerHTML = ''; },
+      setInputEnabled: function (on, msg) { input.style.display = on ? '' : 'none'; inRow.style.display = on ? 'flex' : 'none'; if (msg != null) { inLabel.textContent = msg; } inLabel.style.display = (msg === '') ? 'none' : ''; },
+      error: function (m) { err.textContent = m || ''; },
+      close: function () { wrap.remove(); }
+    };
+    scanBtn.onclick = function () { scanQR(function (v) { input.value = v; }); };
+    submitBtn.onclick = function () {
+      var v = input.value.trim(); if (!v || !api.onSubmit) { return; }
+      err.textContent = ''; submitBtn.textContent = 'Connecting…';
+      Promise.resolve(api.onSubmit(v)).then(function (ok) { submitBtn.textContent = 'Submit'; if (!ok) { api.error('Invalid or incompatible code — check and retry.'); } });
+    };
+    return api;
+  }
+
   function NexusNet(opts) {
     opts = opts || {};
+    var self = this;
     this.appId = opts.appId || 'nexus-share';
     this.iceServers = opts.iceServers || DEFAULT_ICE;
     this.brokers = opts.brokers || DEFAULT_BROKERS;
@@ -326,7 +486,9 @@ net.broadcast({ ... }); // or net.send(peerId, {...})</pre>
     this.onPeerJoin = opts.onPeerJoin || function () {};
     this.onPeerLeave = opts.onPeerLeave || function () {};
     this.onData = opts.onData || function () {};
-    this.onManualSignal = opts.onManualSignal || function () {};
+    // No handler supplied? Fall back to the built-in manual overlay (with QR scan).
+    this.onManualSignal = opts.onManualSignal || function (sig) { self._defaultManualUI(sig); };
+    this._manualUI = null;
 
     this.role = null;           // 'host' | 'guest'
     this.spectator = false;     // guest joined read-only
@@ -579,6 +741,7 @@ net.broadcast({ ... }); // or net.send(peerId, {...})</pre>
         self._peers.add('manual-peer');
         self.onPeerJoin('manual-peer', { name: 'Peer' });
         self._status('connected', 'Connected via manual signaling', 'manual');
+        if (self._manualUI) { try { self._manualUI.close(); } catch (e) {} self._manualUI = null; }
       };
       ch.onmessage = function (ev) { try { self.onData('manual-peer', JSON.parse(ev.data)); } catch (e) {} };
       ch.onclose = function () { if (self._peers.delete('manual-peer')) { self.onPeerLeave('manual-peer'); } };
@@ -592,8 +755,6 @@ net.broadcast({ ... }); // or net.send(peerId, {...})</pre>
         setTimeout(resolve, 3000); // don't wait forever for trickle
       });
     }
-    function encode(desc) { return btoa(JSON.stringify({ t: desc.type, s: desc.sdp })); }
-    function decode(str) { var o = JSON.parse(atob(str.trim())); return { type: o.t, sdp: o.s }; }
 
     return (async function () {
       if (self.role === 'host') {
@@ -602,29 +763,29 @@ net.broadcast({ ... }); // or net.send(peerId, {...})</pre>
         var offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
         await gatherComplete();
-        // Host shows its offer, waits for the guest's answer.
+        // Host shows its offer ("invite"), waits for the guest's answer.
         self.onManualSignal({
-          role: 'host', step: 'offer', out: encode(pc.localDescription),
-          instructions: 'Send this OFFER code to the person joining. Paste their ANSWER code back here.',
+          role: 'host', step: 'offer', out: await packSignal(pc.localDescription),
+          instructions: 'Show this INVITE (QR or code) to the person joining, then scan/paste the ACCEPT code they give back.',
           onSubmit: async function (answerStr) {
-            try { await pc.setRemoteDescription(decode(answerStr)); return true; }
+            try { await pc.setRemoteDescription(await unpackSignal(answerStr)); return true; }
             catch (e) { return false; }
           }
         });
       } else {
         pc.ondatachannel = function (ev) { wireChannel(ev.channel); };
-        // Guest waits for the host's offer, then produces an answer.
+        // Guest scans/pastes the host's invite, then produces an accept code.
         self.onManualSignal({
           role: 'guest', step: 'await-offer',
-          instructions: 'Paste the OFFER code from the host. You’ll get an ANSWER code to send back.',
+          instructions: 'Scan or paste the INVITE code from the host. You’ll get an ACCEPT code to send back.',
           onSubmit: async function (offerStr) {
             try {
-              await pc.setRemoteDescription(decode(offerStr));
+              await pc.setRemoteDescription(await unpackSignal(offerStr));
               var answer = await pc.createAnswer();
               await pc.setLocalDescription(answer);
               await gatherComplete();
-              self.onManualSignal({ role: 'guest', step: 'answer', out: encode(pc.localDescription),
-                instructions: 'Send this ANSWER code back to the host.' });
+              self.onManualSignal({ role: 'guest', step: 'answer', out: await packSignal(pc.localDescription),
+                instructions: 'Send this ACCEPT code back to the host (show its QR or copy it).' });
               return true;
             } catch (e) { return false; }
           }
@@ -633,8 +794,32 @@ net.broadcast({ ... }); // or net.send(peerId, {...})</pre>
     })();
   };
 
+  // Built-in manual overlay driver (used when no onManualSignal is supplied).
+  NexusNet.prototype._defaultManualUI = function (sig) {
+    if (!this._manualUI) { this._manualUI = buildManualOverlay(); }
+    var ui = this._manualUI;
+    ui.setInstructions(sig.instructions || '');
+    if (sig.onSubmit) { ui.onSubmit = sig.onSubmit; }
+    if (sig.step === 'offer') {            // host: show invite, accept an answer
+      ui.setOut(sig.out); ui.setInputEnabled(true, 'Scan or paste the ACCEPT code from the joiner');
+    } else if (sig.step === 'await-offer') { // guest: no code yet, take the invite
+      ui.hideOut(); ui.setInputEnabled(true, 'Scan or paste the INVITE code from the host');
+    } else if (sig.step === 'answer') {    // guest: show accept, done
+      ui.setOut(sig.out); ui.setInputEnabled(false, 'Send this ACCEPT back to the host. Waiting…');
+    }
+  };
+
+  var _origLeave = NexusNet.prototype.leave;
+  NexusNet.prototype.leave = function () {
+    if (this._manualUI) { try { this._manualUI.close(); } catch (e) {} this._manualUI = null; }
+    return _origLeave.call(this);
+  };
+
   global.NexusNet = NexusNet;
   global.NexusNet.randomCode = randomCode;
+  global.NexusNet.scanQR = scanQR;         // expose the camera scanner for apps
+  global.NexusNet.packSignal = packSignal; // exposed for custom manual UIs
+  global.NexusNet.unpackSignal = unpackSignal;
 })(window);
 </script>
 
@@ -801,14 +986,20 @@ net.broadcast({ ... }); // or net.send(peerId, {...})</pre>
     if (sig.out) {
       $('manual-out').value = sig.out;
       $('manual-out-label').classList.remove('hidden');
+      // Auto-render the QR so the other device can scan immediately.
+      if (sig.out.length <= 2200) { renderQR('manual-qr', sig.out, 240); }
+      else { $('manual-qr').innerHTML = '<span class="note">Code too long for a reliable QR — use Copy instead.</span>'; }
     } else {
       $('manual-out').value = '';
+      $('manual-qr').innerHTML = '';
+      $('manual-out-label').classList.add('hidden');
     }
     if (sig.onSubmit) { manualSubmitFn = sig.onSubmit; }
     if (sig.step === 'answer') {
       // guest finished; hide the input half
       $('manual-in-label').textContent = 'Done — waiting for host to accept.';
       $('manual-in').classList.add('hidden');
+      document.getElementById('manual-scan').classList.add('hidden');
       $('manual-submit').classList.add('hidden');
     }
   }
@@ -819,8 +1010,12 @@ net.broadcast({ ... }); // or net.send(peerId, {...})</pre>
   });
   $('manual-qr-btn').addEventListener('click', function () {
     var val = $('manual-out').value;
-    if (val.length > 1200) { $('manual-qr').innerHTML = '<span class="note">Code too long for a reliable QR — use Copy instead.</span>'; return; }
+    if (val.length > 2200) { $('manual-qr').innerHTML = '<span class="note">Code too long for a reliable QR — use Copy instead.</span>'; return; }
     renderQR('manual-qr', val, 260);
+  });
+  $('manual-scan').addEventListener('click', function () {
+    if (!window.NexusNet || !NexusNet.scanQR) { return; }
+    NexusNet.scanQR(function (v) { $('manual-in').value = v; });
   });
   $('manual-submit').addEventListener('click', function () {
     var val = $('manual-in').value.trim();
