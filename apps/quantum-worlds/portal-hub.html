@@ -260,7 +260,7 @@
     <div id="hud-top-left" class="hud">
         <div class="panel">
             <h1>🌀 Portal Hub</h1>
-            <div style="font-size:0.8rem; color:#aaa; margin-top:4px;">10 Quantum Worlds · P2P meta-universe</div>
+            <div style="font-size:0.8rem; color:#aaa; margin-top:4px;">11 Quantum Worlds · P2P meta-universe</div>
             <div class="room-row">
                 <span>Room:</span>
                 <span class="room-code" id="room-code">connecting…</span>
@@ -311,7 +311,7 @@
     <!-- Click-to-start (acquires pointer lock) -->
     <div id="start-overlay">
         <h1>🌀 PORTAL HUB</h1>
-        <p>A meta-universe linking the 10 Quantum Worlds. Walk through any portal to drop into that world. Other peers in your room will appear as glowing capsules — and as ghosts near a portal when they're inside it.</p>
+        <p>A meta-universe linking the 11 Quantum Worlds. Walk through any portal to drop into that world. Other peers in your room will appear as glowing capsules — and as ghosts near a portal when they're inside it.</p>
         <div class="config-row">
             <label>Name: <input type="text" id="start-name" maxlength="16" placeholder="Wanderer"></label>
             <label>Color: <input type="color" id="start-color" value="#00ffff"></label>
@@ -701,7 +701,7 @@
 'use strict';
 
 /* =====================================================================
- * Portal Hub — meta-universe entry point for the 10 Quantum Worlds.
+ * Portal Hub — meta-universe entry point for the 11 Quantum Worlds.
  *
  * Architecture:
  *   - Three.js renders a circular plaza with 10 portals around the rim.
@@ -721,7 +721,7 @@
 const APP_NAME = 'portal-hub';
 const STORAGE_KEY = APP_NAME + '-avatar';
 
-// The 10 Quantum Worlds. Paths are relative — the hub lives in the same
+// The 11 Quantum Worlds. Paths are relative — the hub lives in the same
 // directory as the worlds (apps/quantum-worlds/), so a sibling reference
 // works whether served via http.server or any other static host.
 const WORLDS = [
@@ -735,6 +735,7 @@ const WORLDS = [
     { id: 'fractal-forest',         file: 'fractal-forest.html',                  label: 'Fractal Forest',         icon: '🌳', color: 0x00ff00 },
     { id: 'living-paint',           file: 'living-paint-dimension-world.html',    label: 'Living Paint',           icon: '🎨', color: 0xff1493 },
     { id: 'dying-star',             file: 'ancient-ruins-dying-star-world.html',  label: 'Dying Star',             icon: '⭐', color: 0xff4500 },
+    { id: 'agent-swarm-nebula',     file: 'agent-swarm-nebula.html',              label: 'Agent Swarm Nebula',     icon: '🐝', color: 0xffcc00 },
 ];
 
 // ----- State ------------------------------------------------------------
