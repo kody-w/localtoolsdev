@@ -1,6 +1,54 @@
 {
   "posts": [
     {
+      "id": 9747,
+      "title": "MintAct: A Unified Visual Agent for Digital Environments",
+      "url": "https://arxiv.org/abs/2609.22083",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-09-21T02:39:08.081Z",
+      "updatedAt": "2026-09-21T02:39:08.081Z",
+      "user": null,
+      "commentCount": 15,
+      "voteCount": 0,
+      "points": 36,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
+      "id": 9746,
+      "title": "Verification Jigs",
+      "url": "https://fredkozlowski.com/2026/09/20/verification-jigs/",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-09-21T01:42:56.795Z",
+      "updatedAt": "2026-09-21T01:42:56.795Z",
+      "user": null,
+      "commentCount": 135,
+      "voteCount": 0,
+      "points": 278,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
+      "id": 9745,
+      "title": "AI Cost Explorer - Decision tool for comparing AI API offers to save money",
+      "url": "https://github.com/SamVale29/ai-cost-explorer",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-09-20T03:27:53.542Z",
+      "updatedAt": "2026-09-20T03:27:53.542Z",
+      "user": null,
+      "commentCount": 7,
+      "voteCount": 0,
+      "points": 14,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
       "id": 9744,
       "title": "How To Write With An LLM",
       "url": "https://sockpuppet.org/blog/2026/09/17/how-to-write-with-an-llm/",
@@ -435,64 +483,16 @@
       "points": 24,
       "votedByMe": false,
       "mine": false
-    },
-    {
-      "id": 9716,
-      "title": "SNAP3D: Physically Grounded 3D Parts for Assembly from a Single Image",
-      "url": "https://lucytuan.github.io/SNAP3D/",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-09-14T04:22:22.956Z",
-      "updatedAt": "2026-09-14T04:22:22.956Z",
-      "user": null,
-      "commentCount": 8,
-      "voteCount": 0,
-      "points": 17,
-      "votedByMe": false,
-      "mine": false
-    },
-    {
-      "id": 9715,
-      "title": "Diffusion Models and Concept Formation",
-      "url": "https://arxiv.org/abs/2609.13047",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-09-14T04:11:02.393Z",
-      "updatedAt": "2026-09-14T04:11:02.393Z",
-      "user": null,
-      "commentCount": 15,
-      "voteCount": 0,
-      "points": 28,
-      "votedByMe": false,
-      "mine": false
-    },
-    {
-      "id": 9714,
-      "title": "Slow developer experience will bottleneck fast models",
-      "url": "https://www.seangoedecke.com/slow-devex-will-bottleneck-fast-models/",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-09-14T01:39:59.444Z",
-      "updatedAt": "2026-09-14T01:39:59.444Z",
-      "user": null,
-      "commentCount": 22,
-      "voteCount": 0,
-      "points": 55,
-      "votedByMe": false,
-      "mine": false
     }
   ],
   "pagination": {
     "currentPage": 1,
     "totalPages": 298,
-    "totalPosts": 8924,
+    "totalPosts": 8927,
     "limit": 30
   },
   "_meta": {
-    "last_updated": "2026-09-20T03:00:56.626640Z",
+    "last_updated": "2026-09-21T02:58:10.585204Z",
     "source": "news.ysimulator.run"
   }
 }
