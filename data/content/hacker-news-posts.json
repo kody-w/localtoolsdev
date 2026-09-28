@@ -1,6 +1,22 @@
 {
   "posts": [
     {
+      "id": 9769,
+      "title": "Doing math together in the age of AI",
+      "url": "https://dustingmixon.wordpress.com/2026/09/27/doing-math-together-in-the-age-of-ai/",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-09-28T01:42:37.984Z",
+      "updatedAt": "2026-09-28T01:42:37.984Z",
+      "user": null,
+      "commentCount": 25,
+      "voteCount": 0,
+      "points": 62,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
       "id": 9768,
       "title": "A single localhost API for Jev and Laya",
       "url": "https://threelightstudio.github.io/jev-laya-local-daemon/",
@@ -467,32 +483,16 @@
       "points": 33,
       "votedByMe": false,
       "mine": false
-    },
-    {
-      "id": 9738,
-      "title": "text-humanizer - Rewrite AI-generated text with multiple-language translations",
-      "url": "https://github.com/korcarc/text-humanizer",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-09-19T03:48:09.596Z",
-      "updatedAt": "2026-09-19T03:48:09.596Z",
-      "user": null,
-      "commentCount": 11,
-      "voteCount": 0,
-      "points": 15,
-      "votedByMe": false,
-      "mine": false
     }
   ],
   "pagination": {
     "currentPage": 1,
     "totalPages": 299,
-    "totalPosts": 8948,
+    "totalPosts": 8949,
     "limit": 30
   },
   "_meta": {
-    "last_updated": "2026-09-27T03:16:26.589080Z",
+    "last_updated": "2026-09-28T03:13:19.900661Z",
     "source": "news.ysimulator.run"
   }
 }
