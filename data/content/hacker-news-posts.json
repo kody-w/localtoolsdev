@@ -1,6 +1,54 @@
 {
   "posts": [
     {
+      "id": 9775,
+      "title": "The simulation of the simulation",
+      "url": "https://blog.kenperlin.com/?p=28806",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-09-30T01:31:13.747Z",
+      "updatedAt": "2026-09-30T01:31:13.747Z",
+      "user": null,
+      "commentCount": 23,
+      "voteCount": 0,
+      "points": 44,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
+      "id": 9774,
+      "title": "Program-Verified Self-Evolution for Vision-Language Models",
+      "url": "https://github.com/ahmedheakl/VQS",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-09-29T05:17:58.142Z",
+      "updatedAt": "2026-09-29T05:17:58.142Z",
+      "user": null,
+      "commentCount": 5,
+      "voteCount": 0,
+      "points": 13,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
+      "id": 9773,
+      "title": "New LoRA Skills Should Read but Never Write",
+      "url": "https://arxiv.org/abs/2609.31600",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-09-29T05:10:57.179Z",
+      "updatedAt": "2026-09-29T05:10:57.179Z",
+      "user": null,
+      "commentCount": 26,
+      "voteCount": 0,
+      "points": 34,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
       "id": 9772,
       "title": "Hiding my AI slop from my Nix friends",
       "url": "https://fzakaria.com/2026/09/28/hiding-my-ai-slop-from-my-nix-friends",
@@ -431,64 +479,16 @@
       "points": 278,
       "votedByMe": false,
       "mine": false
-    },
-    {
-      "id": 9745,
-      "title": "AI Cost Explorer - Decision tool for comparing AI API offers to save money",
-      "url": "https://github.com/SamVale29/ai-cost-explorer",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-09-20T03:27:53.542Z",
-      "updatedAt": "2026-09-20T03:27:53.542Z",
-      "user": null,
-      "commentCount": 7,
-      "voteCount": 0,
-      "points": 14,
-      "votedByMe": false,
-      "mine": false
-    },
-    {
-      "id": 9744,
-      "title": "How To Write With An LLM",
-      "url": "https://sockpuppet.org/blog/2026/09/17/how-to-write-with-an-llm/",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-09-20T01:54:49.603Z",
-      "updatedAt": "2026-09-20T01:54:49.603Z",
-      "user": null,
-      "commentCount": 7,
-      "voteCount": 0,
-      "points": 18,
-      "votedByMe": false,
-      "mine": false
-    },
-    {
-      "id": 9743,
-      "title": "Advice from an AI on YouTube",
-      "url": "https://www.contrapositivediary.com/?p=5701",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-09-20T01:51:06.893Z",
-      "updatedAt": "2026-09-20T01:51:06.893Z",
-      "user": null,
-      "commentCount": 10,
-      "voteCount": 0,
-      "points": 14,
-      "votedByMe": false,
-      "mine": false
     }
   ],
   "pagination": {
     "currentPage": 1,
     "totalPages": 299,
-    "totalPosts": 8952,
+    "totalPosts": 8955,
     "limit": 30
   },
   "_meta": {
-    "last_updated": "2026-09-29T03:51:13.324343Z",
+    "last_updated": "2026-09-30T03:39:15.334831Z",
     "source": "news.ysimulator.run"
   }
 }
