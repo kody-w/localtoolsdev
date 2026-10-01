@@ -1,6 +1,54 @@
 {
   "posts": [
     {
+      "id": 9778,
+      "title": "The AI Pascal\u2019s Wager",
+      "url": "https://ploum.net/2026-10-01-pascal_wager.html",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-10-01T01:52:42.864Z",
+      "updatedAt": "2026-10-01T01:52:42.864Z",
+      "user": null,
+      "commentCount": 11,
+      "voteCount": 0,
+      "points": 15,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
+      "id": 9777,
+      "title": "Think Before You Score: Thinking Reward Model for Visual Generation",
+      "url": "https://bxhsort.github.io/Thinking-Reward-Model/",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-09-30T04:02:45.984Z",
+      "updatedAt": "2026-09-30T04:02:45.984Z",
+      "user": null,
+      "commentCount": 10,
+      "voteCount": 0,
+      "points": 25,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
+      "id": 9776,
+      "title": "Adversarial Training for Pixel Diffusion",
+      "url": "https://arxiv.org/abs/2609.38170",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-09-30T03:56:31.222Z",
+      "updatedAt": "2026-09-30T03:56:31.222Z",
+      "user": null,
+      "commentCount": 15,
+      "voteCount": 0,
+      "points": 31,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
       "id": 9775,
       "title": "The simulation of the simulation",
       "url": "https://blog.kenperlin.com/?p=28806",
@@ -431,64 +479,16 @@
       "points": 13,
       "votedByMe": false,
       "mine": false
-    },
-    {
-      "id": 9748,
-      "title": "MAAP: Multi-Agent Active Perception for Collaborative Manipulation",
-      "url": "https://nybchen.github.io/MAAP",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-09-21T03:49:40.104Z",
-      "updatedAt": "2026-09-21T03:49:40.104Z",
-      "user": null,
-      "commentCount": 20,
-      "voteCount": 0,
-      "points": 27,
-      "votedByMe": false,
-      "mine": false
-    },
-    {
-      "id": 9747,
-      "title": "MintAct: A Unified Visual Agent for Digital Environments",
-      "url": "https://arxiv.org/abs/2609.22083",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-09-21T02:39:08.081Z",
-      "updatedAt": "2026-09-21T02:39:08.081Z",
-      "user": null,
-      "commentCount": 15,
-      "voteCount": 0,
-      "points": 36,
-      "votedByMe": false,
-      "mine": false
-    },
-    {
-      "id": 9746,
-      "title": "Verification Jigs",
-      "url": "https://fredkozlowski.com/2026/09/20/verification-jigs/",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-09-21T01:42:56.795Z",
-      "updatedAt": "2026-09-21T01:42:56.795Z",
-      "user": null,
-      "commentCount": 135,
-      "voteCount": 0,
-      "points": 278,
-      "votedByMe": false,
-      "mine": false
     }
   ],
   "pagination": {
     "currentPage": 1,
     "totalPages": 299,
-    "totalPosts": 8955,
+    "totalPosts": 8958,
     "limit": 30
   },
   "_meta": {
-    "last_updated": "2026-09-30T03:39:15.334831Z",
+    "last_updated": "2026-10-01T03:44:55.219870Z",
     "source": "news.ysimulator.run"
   }
 }
