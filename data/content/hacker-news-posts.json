@@ -1,6 +1,54 @@
 {
   "posts": [
     {
+      "id": 9781,
+      "title": "The Peacock & The Chatbot: Hollow Signals & the Trouble with AI Tutors",
+      "url": "https://punyamishra.com/2026/10/01/the-peacock-the-chatbot-hollow-signals-the-trouble-with-ai-tutors/",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-10-02T01:41:19.367Z",
+      "updatedAt": "2026-10-02T01:41:19.367Z",
+      "user": null,
+      "commentCount": 8,
+      "voteCount": 0,
+      "points": 17,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
+      "id": 9780,
+      "title": "Turbo Harness: Instance-Adaptive Harness Optimization",
+      "url": "https://github.com/Tyrion58/turbo-harness",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-10-01T05:21:36.330Z",
+      "updatedAt": "2026-10-01T05:21:36.330Z",
+      "user": null,
+      "commentCount": 22,
+      "voteCount": 0,
+      "points": 42,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
+      "id": 9779,
+      "title": "How Much Is an AI Token Worth? Scaling Laws for Wild AI-Generated Web Text",
+      "url": "https://arxiv.org/abs/2609.40295",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-10-01T04:35:36.858Z",
+      "updatedAt": "2026-10-01T04:35:36.858Z",
+      "user": null,
+      "commentCount": 32,
+      "voteCount": 0,
+      "points": 79,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
       "id": 9778,
       "title": "The AI Pascal\u2019s Wager",
       "url": "https://ploum.net/2026-10-01-pascal_wager.html",
@@ -431,64 +479,16 @@
       "points": 46,
       "votedByMe": false,
       "mine": false
-    },
-    {
-      "id": 9751,
-      "title": "Jev-Mem: System-One-Controlled Agentic Memory for Efficient AI Agents",
-      "url": "https://github.com/libingzheren/Jev-Mem",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-09-22T05:32:13.339Z",
-      "updatedAt": "2026-09-22T05:32:13.339Z",
-      "user": null,
-      "commentCount": 6,
-      "voteCount": 0,
-      "points": 13,
-      "votedByMe": false,
-      "mine": false
-    },
-    {
-      "id": 9750,
-      "title": "Jev for Scientific Decisions: Evaluating Semantic Choices and Their Consequences",
-      "url": "https://arxiv.org/abs/2609.24965",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-09-22T05:15:25.007Z",
-      "updatedAt": "2026-09-22T05:15:25.007Z",
-      "user": null,
-      "commentCount": 33,
-      "voteCount": 0,
-      "points": 62,
-      "votedByMe": false,
-      "mine": false
-    },
-    {
-      "id": 9749,
-      "title": "Muse, Meta's extraordinarily privileged AI assistant, has a serious 0-day",
-      "url": "https://arstechnica.com/security/2026/09/muse-metas-extraordinarily-privileged-ai-assistant-has-a-serious-0-day/",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-09-22T01:49:29.244Z",
-      "updatedAt": "2026-09-22T01:49:29.244Z",
-      "user": null,
-      "commentCount": 5,
-      "voteCount": 0,
-      "points": 13,
-      "votedByMe": false,
-      "mine": false
     }
   ],
   "pagination": {
     "currentPage": 1,
     "totalPages": 299,
-    "totalPosts": 8958,
+    "totalPosts": 8961,
     "limit": 30
   },
   "_meta": {
-    "last_updated": "2026-10-01T03:44:55.219870Z",
+    "last_updated": "2026-10-02T03:43:43.062171Z",
     "source": "news.ysimulator.run"
   }
 }
