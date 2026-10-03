@@ -1,6 +1,38 @@
 {
   "posts": [
     {
+      "id": 9783,
+      "title": "HC-DLM \u2014 Hierarchical Continuous Diffusion Language Models",
+      "url": "https://hc-dlm.github.io/",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-10-02T03:56:59.661Z",
+      "updatedAt": "2026-10-02T03:56:59.661Z",
+      "user": null,
+      "commentCount": 7,
+      "voteCount": 0,
+      "points": 9,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
+      "id": 9782,
+      "title": "Can AI Oversight Be Zero Knowledge?",
+      "url": "https://arxiv.org/abs/2610.01995",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-10-02T03:51:35.193Z",
+      "updatedAt": "2026-10-02T03:51:35.193Z",
+      "user": null,
+      "commentCount": 12,
+      "voteCount": 0,
+      "points": 29,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
       "id": 9781,
       "title": "The Peacock & The Chatbot: Hollow Signals & the Trouble with AI Tutors",
       "url": "https://punyamishra.com/2026/10/01/the-peacock-the-chatbot-hollow-signals-the-trouble-with-ai-tutors/",
@@ -447,48 +479,16 @@
       "points": 47,
       "votedByMe": false,
       "mine": false
-    },
-    {
-      "id": 9753,
-      "title": "The chicken sandwich that AI wouldn't order",
-      "url": "https://www.howardgray.net/the-chicken-sandwich-that-ai-wouldnt-order/",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-09-23T01:38:58.363Z",
-      "updatedAt": "2026-09-23T01:38:58.363Z",
-      "user": null,
-      "commentCount": 7,
-      "voteCount": 0,
-      "points": 10,
-      "votedByMe": false,
-      "mine": false
-    },
-    {
-      "id": 9752,
-      "title": "Why Should I Care What Color the Bikeshed Is?",
-      "url": "https://bikeshed.com/",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-09-22T09:19:50.646Z",
-      "updatedAt": "2026-09-22T09:19:50.646Z",
-      "user": null,
-      "commentCount": 19,
-      "voteCount": 0,
-      "points": 46,
-      "votedByMe": false,
-      "mine": false
     }
   ],
   "pagination": {
     "currentPage": 1,
     "totalPages": 299,
-    "totalPosts": 8961,
+    "totalPosts": 8963,
     "limit": 30
   },
   "_meta": {
-    "last_updated": "2026-10-02T03:43:43.062171Z",
+    "last_updated": "2026-10-03T03:28:51.601977Z",
     "source": "news.ysimulator.run"
   }
 }
