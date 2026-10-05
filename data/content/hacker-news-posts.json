@@ -1,6 +1,22 @@
 {
   "posts": [
     {
+      "id": 9791,
+      "title": "Destroying all of humanity is hard work, even for a superintelligence",
+      "url": "https://nibblestew.blogspot.com/2026/10/destroying-all-of-humanity-is-hard-work.html",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-10-05T01:51:40.319Z",
+      "updatedAt": "2026-10-05T01:51:40.319Z",
+      "user": null,
+      "commentCount": 10,
+      "voteCount": 0,
+      "points": 21,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
       "id": 9790,
       "title": "Faultline - Open-source, fault-tolerant job execution engine, built in C11",
       "url": "https://github.com/farukumarx64/faultline-c",
@@ -463,32 +479,16 @@
       "points": 17,
       "votedByMe": false,
       "mine": false
-    },
-    {
-      "id": 9761,
-      "title": "Rolling-WAM: World Action Models with Rolling Imagination",
-      "url": "https://rolling-wam.github.io/",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-09-25T04:01:35.382Z",
-      "updatedAt": "2026-09-25T04:01:35.382Z",
-      "user": null,
-      "commentCount": 13,
-      "voteCount": 0,
-      "points": 27,
-      "votedByMe": false,
-      "mine": false
     }
   ],
   "pagination": {
     "currentPage": 1,
-    "totalPages": 299,
-    "totalPosts": 8970,
+    "totalPages": 300,
+    "totalPosts": 8971,
     "limit": 30
   },
   "_meta": {
-    "last_updated": "2026-10-04T03:56:19.464885Z",
+    "last_updated": "2026-10-05T03:41:26.047948Z",
     "source": "news.ysimulator.run"
   }
 }
