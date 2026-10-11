@@ -1,6 +1,38 @@
 {
   "posts": [
     {
+      "id": 9813,
+      "title": "A.I.: Anti-Intellectualism",
+      "url": "https://togelius.blogspot.com/2026/10/ai-anti-intellectualism.html",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-10-11T01:49:56.911Z",
+      "updatedAt": "2026-10-11T01:49:56.911Z",
+      "user": null,
+      "commentCount": 21,
+      "voteCount": 0,
+      "points": 27,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
+      "id": 9812,
+      "title": "Gase - An educative Rust Mega Drive Genesis Emulator for educational purposes",
+      "url": "https://bthuner.github.io/gase/",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-10-10T20:59:15.610Z",
+      "updatedAt": "2026-10-10T20:59:15.610Z",
+      "user": null,
+      "commentCount": 4,
+      "voteCount": 0,
+      "points": 10,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
       "id": 9811,
       "title": "skipper - MCP server for git repositories",
       "url": "https://github.com/seuros/skipper",
@@ -447,48 +479,16 @@
       "points": 20,
       "votedByMe": false,
       "mine": false
-    },
-    {
-      "id": 9783,
-      "title": "HC-DLM \u2014 Hierarchical Continuous Diffusion Language Models",
-      "url": "https://hc-dlm.github.io/",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-10-02T03:56:59.661Z",
-      "updatedAt": "2026-10-02T03:56:59.661Z",
-      "user": null,
-      "commentCount": 7,
-      "voteCount": 0,
-      "points": 9,
-      "votedByMe": false,
-      "mine": false
-    },
-    {
-      "id": 9782,
-      "title": "Can AI Oversight Be Zero Knowledge?",
-      "url": "https://arxiv.org/abs/2610.01995",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-10-02T03:51:35.193Z",
-      "updatedAt": "2026-10-02T03:51:35.193Z",
-      "user": null,
-      "commentCount": 12,
-      "voteCount": 0,
-      "points": 29,
-      "votedByMe": false,
-      "mine": false
     }
   ],
   "pagination": {
     "currentPage": 1,
     "totalPages": 300,
-    "totalPosts": 8991,
+    "totalPosts": 8993,
     "limit": 30
   },
   "_meta": {
-    "last_updated": "2026-10-10T03:58:55.314112Z",
+    "last_updated": "2026-10-11T03:33:51.299542Z",
     "source": "news.ysimulator.run"
   }
 }
