@@ -1,6 +1,54 @@
 {
   "posts": [
     {
+      "id": 9840,
+      "title": "AI doom as message overload",
+      "url": "https://languagelog.ldc.upenn.edu/nll/?p=74459",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-10-20T01:42:34.332Z",
+      "updatedAt": "2026-10-20T01:42:34.332Z",
+      "user": null,
+      "commentCount": 51,
+      "voteCount": 0,
+      "points": 100,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
+      "id": 9839,
+      "title": "Learning to Correct Geometry in Generated Videos",
+      "url": "https://weijielyu.github.io/VGC",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-10-19T03:49:09.468Z",
+      "updatedAt": "2026-10-19T03:49:09.468Z",
+      "user": null,
+      "commentCount": 15,
+      "voteCount": 0,
+      "points": 37,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
+      "id": 9838,
+      "title": "High prevalence of antagonizing rhetoric in trending topics on Twitter/X",
+      "url": "https://arxiv.org/abs/2610.22455",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-10-19T03:37:45.785Z",
+      "updatedAt": "2026-10-19T03:37:45.785Z",
+      "user": null,
+      "commentCount": 17,
+      "voteCount": 0,
+      "points": 21,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
       "id": 9837,
       "title": "Using AI agents effectively without trusting them",
       "url": "https://www.robinlinacre.com/open_source_agents/",
@@ -431,64 +479,16 @@
       "points": 72,
       "votedByMe": false,
       "mine": false
-    },
-    {
-      "id": 9810,
-      "title": "The design and societal failure of Microsoft\u2019s ribbon bar",
-      "url": "https://nathansnelgrove.com/2026/10/the-design-and-societal-failure-of-microsofts-ribbon-bar",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-10-10T01:34:53.080Z",
-      "updatedAt": "2026-10-10T01:34:53.080Z",
-      "user": null,
-      "commentCount": 11,
-      "voteCount": 0,
-      "points": 22,
-      "votedByMe": false,
-      "mine": false
-    },
-    {
-      "id": 9809,
-      "title": "Software's centaur age may last decades",
-      "url": "https://www.seangoedecke.com/softwares-centaur-age-may-last-decades/",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-10-10T01:21:34.323Z",
-      "updatedAt": "2026-10-10T01:21:34.323Z",
-      "user": null,
-      "commentCount": 15,
-      "voteCount": 0,
-      "points": 37,
-      "votedByMe": false,
-      "mine": false
-    },
-    {
-      "id": 9808,
-      "title": "AgentGarten: Code Worlds for Evolving Agents",
-      "url": "https://mirros-lab.github.io/agent-garten",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-10-09T03:42:48.194Z",
-      "updatedAt": "2026-10-09T03:42:48.194Z",
-      "user": null,
-      "commentCount": 28,
-      "voteCount": 0,
-      "points": 35,
-      "votedByMe": false,
-      "mine": false
     }
   ],
   "pagination": {
     "currentPage": 1,
     "totalPages": 301,
-    "totalPosts": 9017,
+    "totalPosts": 9020,
     "limit": 30
   },
   "_meta": {
-    "last_updated": "2026-10-19T02:56:04.844719Z",
+    "last_updated": "2026-10-20T03:05:54.329007Z",
     "source": "news.ysimulator.run"
   }
 }
