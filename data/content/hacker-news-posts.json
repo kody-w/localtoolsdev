@@ -1,6 +1,38 @@
 {
   "posts": [
     {
+      "id": 9860,
+      "title": "CrowdGPT",
+      "url": "https://www.crowdgpt.net/",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-10-26T02:18:32.435Z",
+      "updatedAt": "2026-10-26T02:18:32.435Z",
+      "user": null,
+      "commentCount": 6,
+      "voteCount": 0,
+      "points": 12,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
+      "id": 9859,
+      "title": "Reverse Engineer Anything with a Self-Learning Loop",
+      "url": "https://github.com/Speedrunlab/reverse-engineer-anything-self-learning-loop",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-10-25T03:13:07.289Z",
+      "updatedAt": "2026-10-25T03:13:07.289Z",
+      "user": null,
+      "commentCount": 8,
+      "voteCount": 0,
+      "points": 20,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
       "id": 9858,
       "title": "Why is AI-generated language so hard to understand?",
       "url": "https://arxiv.org/abs/2610.29162",
@@ -449,48 +481,16 @@
       "points": 52,
       "votedByMe": false,
       "mine": false
-    },
-    {
-      "id": 9830,
-      "title": "SanSi: A Looped Typed Decision Model for System 1.5 Thinking",
-      "url": "https://minnesotanlp.github.io/Sansi/",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-10-16T11:54:19.050Z",
-      "updatedAt": "2026-10-16T11:54:19.050Z",
-      "user": null,
-      "commentCount": 13,
-      "voteCount": 0,
-      "points": 26,
-      "votedByMe": false,
-      "mine": false
-    },
-    {
-      "id": 9829,
-      "title": "Selection Is Not Learning: Choosing Model Futures",
-      "url": "https://arxiv.org/abs/2610.22029",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-10-16T11:35:59.474Z",
-      "updatedAt": "2026-10-16T11:35:59.474Z",
-      "user": null,
-      "commentCount": 17,
-      "voteCount": 0,
-      "points": 42,
-      "votedByMe": false,
-      "mine": false
     }
   ],
   "pagination": {
     "currentPage": 1,
     "totalPages": 302,
-    "totalPosts": 9038,
+    "totalPosts": 9040,
     "limit": 30
   },
   "_meta": {
-    "last_updated": "2026-10-25T02:52:42.186490Z",
+    "last_updated": "2026-10-26T02:51:25.426131Z",
     "source": "news.ysimulator.run"
   }
 }
