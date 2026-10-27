@@ -1,6 +1,54 @@
 {
   "posts": [
     {
+      "id": 9863,
+      "title": "Is RoPE Just a Recency Bias?",
+      "url": "https://blog.blackhc.net/2026/10/rope-recency/",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-10-27T01:52:02.715Z",
+      "updatedAt": "2026-10-27T01:52:02.715Z",
+      "user": null,
+      "commentCount": 9,
+      "voteCount": 0,
+      "points": 11,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
+      "id": 9862,
+      "title": "Fonte - Fast, minimal open-source app updater for Android",
+      "url": "https://github.com/Turtlecute33/Fonte",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-10-26T03:53:57.444Z",
+      "updatedAt": "2026-10-26T03:53:57.444Z",
+      "user": null,
+      "commentCount": 5,
+      "voteCount": 0,
+      "points": 13,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
+      "id": 9861,
+      "title": "System One models Are Not Better Rerankers",
+      "url": "https://arxiv.org/abs/2610.32318",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-10-26T03:49:59.075Z",
+      "updatedAt": "2026-10-26T03:49:59.075Z",
+      "user": null,
+      "commentCount": 23,
+      "voteCount": 0,
+      "points": 46,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
       "id": 9860,
       "title": "CrowdGPT",
       "url": "https://www.crowdgpt.net/",
@@ -433,64 +481,16 @@
       "points": 20,
       "votedByMe": false,
       "mine": false
-    },
-    {
-      "id": 9833,
-      "title": "TOMC Memory - Context compression and task memory for AI coding agents",
-      "url": "https://github.com/ZipengWu365/TOMC",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-10-17T14:47:03.974Z",
-      "updatedAt": "2026-10-17T14:47:03.974Z",
-      "user": null,
-      "commentCount": 9,
-      "voteCount": 0,
-      "points": 12,
-      "votedByMe": false,
-      "mine": false
-    },
-    {
-      "id": 9832,
-      "title": "Encryption Is Getting Squeezed From All Sides",
-      "url": "https://www.wired.com/story/kernel-panic-encryption-is-getting-squeezed-from-all-sides/",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-10-17T14:40:45.954Z",
-      "updatedAt": "2026-10-17T14:40:45.954Z",
-      "user": null,
-      "commentCount": 12,
-      "voteCount": 0,
-      "points": 30,
-      "votedByMe": false,
-      "mine": false
-    },
-    {
-      "id": 9831,
-      "title": "Hexx68K - A strategy game for 1 or 2 players",
-      "url": "https://tinkerdifferent.com/threads/hexx68k-a-strategy-game-for-1-or-2-players.5692/",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-10-17T08:08:13.071Z",
-      "updatedAt": "2026-10-17T08:08:13.071Z",
-      "user": null,
-      "commentCount": 26,
-      "voteCount": 0,
-      "points": 52,
-      "votedByMe": false,
-      "mine": false
     }
   ],
   "pagination": {
     "currentPage": 1,
     "totalPages": 302,
-    "totalPosts": 9040,
+    "totalPosts": 9043,
     "limit": 30
   },
   "_meta": {
-    "last_updated": "2026-10-26T02:51:25.426131Z",
+    "last_updated": "2026-10-27T03:24:52.045603Z",
     "source": "news.ysimulator.run"
   }
 }
