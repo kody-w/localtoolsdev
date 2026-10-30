@@ -1,6 +1,22 @@
 {
   "posts": [
     {
+      "id": 9875,
+      "title": "Jules Turndown",
+      "url": "https://jules.google/docs/changelog/",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-10-30T01:24:25.339Z",
+      "updatedAt": "2026-10-30T01:24:25.339Z",
+      "user": null,
+      "commentCount": 14,
+      "voteCount": 0,
+      "points": 28,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
       "id": 9874,
       "title": "OpenFounderSchool - Open-source AI founder coach kits for popular harnesses",
       "url": "https://github.com/altuzar/OpenFounderSchool",
@@ -465,32 +481,16 @@
       "points": 50,
       "votedByMe": false,
       "mine": false
-    },
-    {
-      "id": 9845,
-      "title": "VideoMaMa++: Temporally Consistent Video Matting via Preserve-and-Refine Tokens",
-      "url": "https://cvlab-kaist.github.io/VideoMaMa-PlusPlus/",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-10-20T05:53:12.716Z",
-      "updatedAt": "2026-10-20T05:53:12.716Z",
-      "user": null,
-      "commentCount": 14,
-      "voteCount": 0,
-      "points": 28,
-      "votedByMe": false,
-      "mine": false
     }
   ],
   "pagination": {
     "currentPage": 1,
     "totalPages": 302,
-    "totalPosts": 9054,
+    "totalPosts": 9055,
     "limit": 30
   },
   "_meta": {
-    "last_updated": "2026-10-29T04:01:02.512936Z",
+    "last_updated": "2026-10-30T04:02:37.831350Z",
     "source": "news.ysimulator.run"
   }
 }
