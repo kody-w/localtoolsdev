@@ -1,6 +1,54 @@
 {
   "posts": [
     {
+      "id": 9878,
+      "title": "Anthropic tells Claude to stop remaking video games",
+      "url": "https://www.gamedeveloper.com/programming/anthropic-appears-to-have-ordered-ai-tool-claude-to-stop-remaking-video-games",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-10-31T02:21:04.687Z",
+      "updatedAt": "2026-10-31T02:21:04.687Z",
+      "user": null,
+      "commentCount": 26,
+      "voteCount": 0,
+      "points": 32,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
+      "id": 9877,
+      "title": "WebAnything: From the Wild Web to Scalable Agent Environments",
+      "url": "https://github.com/china-qijizhifeng/Web-Anything",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-10-30T05:10:44.811Z",
+      "updatedAt": "2026-10-30T05:10:44.811Z",
+      "user": null,
+      "commentCount": 27,
+      "voteCount": 0,
+      "points": 66,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
+      "id": 9876,
+      "title": "From extreme weather to agricultural consequences with agentic AI",
+      "url": "https://arxiv.org/abs/2610.40641",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-10-30T05:04:51.575Z",
+      "updatedAt": "2026-10-30T05:04:51.575Z",
+      "user": null,
+      "commentCount": 14,
+      "voteCount": 0,
+      "points": 28,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
       "id": 9875,
       "title": "Jules Turndown",
       "url": "https://jules.google/docs/changelog/",
@@ -433,64 +481,16 @@
       "points": 1,
       "votedByMe": false,
       "mine": false
-    },
-    {
-      "id": 9848,
-      "title": "Large Flow Language Models",
-      "url": "https://github.com/lafa-gh/large-flow-lms",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-10-21T04:01:20.447Z",
-      "updatedAt": "2026-10-21T04:01:20.447Z",
-      "user": null,
-      "commentCount": 21,
-      "voteCount": 0,
-      "points": 26,
-      "votedByMe": false,
-      "mine": false
-    },
-    {
-      "id": 9847,
-      "title": "How Intervention History Changes AI Agent Sabotage on Subsequent Tasks",
-      "url": "https://arxiv.org/abs/2610.26935",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-10-21T03:50:56.026Z",
-      "updatedAt": "2026-10-21T03:50:56.026Z",
-      "user": null,
-      "commentCount": 3,
-      "voteCount": 0,
-      "points": 8,
-      "votedByMe": false,
-      "mine": false
-    },
-    {
-      "id": 9846,
-      "title": "Large Language Models and Free Software",
-      "url": "https://haruska.com/writing/llms-and-free-software",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-10-21T01:54:59.881Z",
-      "updatedAt": "2026-10-21T01:54:59.881Z",
-      "user": null,
-      "commentCount": 25,
-      "voteCount": 0,
-      "points": 50,
-      "votedByMe": false,
-      "mine": false
     }
   ],
   "pagination": {
     "currentPage": 1,
     "totalPages": 302,
-    "totalPosts": 9055,
+    "totalPosts": 9058,
     "limit": 30
   },
   "_meta": {
-    "last_updated": "2026-10-30T04:02:37.831350Z",
+    "last_updated": "2026-10-31T03:46:56.639939Z",
     "source": "news.ysimulator.run"
   }
 }
