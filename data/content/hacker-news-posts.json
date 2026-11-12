@@ -1,6 +1,38 @@
 {
   "posts": [
     {
+      "id": 9950,
+      "title": "More review is not better review",
+      "url": "https://avelino.run/more-review-is-not-better-review/",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-11-12T01:34:48.565Z",
+      "updatedAt": "2026-11-12T01:34:48.565Z",
+      "user": null,
+      "commentCount": 11,
+      "voteCount": 0,
+      "points": 23,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
+      "id": 9949,
+      "title": "UGG: Unified Generative Geometry Model",
+      "url": "https://ugg-model.github.io/",
+      "text": null,
+      "hidden": false,
+      "userId": null,
+      "createdAt": "2026-11-11T05:16:39.306Z",
+      "updatedAt": "2026-11-11T05:16:39.306Z",
+      "user": null,
+      "commentCount": 10,
+      "voteCount": 0,
+      "points": 25,
+      "votedByMe": false,
+      "mine": false
+    },
+    {
       "id": 9948,
       "title": "Few-Step Streaming Video Generation via Condition Shifting",
       "url": "https://arxiv.org/abs/2611.14033",
@@ -449,48 +481,16 @@
       "points": 44,
       "votedByMe": false,
       "mine": false
-    },
-    {
-      "id": 9920,
-      "title": "chemistry",
-      "url": null,
-      "text": "what is a covalent or ionic compound?",
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-11-03T17:17:29.494Z",
-      "updatedAt": "2026-11-03T17:17:29.494Z",
-      "user": null,
-      "commentCount": 16,
-      "voteCount": 0,
-      "points": 33,
-      "votedByMe": false,
-      "mine": false
-    },
-    {
-      "id": 9919,
-      "title": "On the Distribution of Prime Squares and Its Applications",
-      "url": "https://github.com/HamedMousaviMath/lean4-paper-On-Distribution-of-Prime-Squares-formalization/tree/main",
-      "text": null,
-      "hidden": false,
-      "userId": null,
-      "createdAt": "2026-11-03T09:13:24.662Z",
-      "updatedAt": "2026-11-03T09:13:24.662Z",
-      "user": null,
-      "commentCount": 10,
-      "voteCount": 0,
-      "points": 25,
-      "votedByMe": false,
-      "mine": false
     }
   ],
   "pagination": {
     "currentPage": 1,
     "totalPages": 305,
-    "totalPosts": 9128,
+    "totalPosts": 9130,
     "limit": 30
   },
   "_meta": {
-    "last_updated": "2026-11-11T04:19:38.820697Z",
+    "last_updated": "2026-11-12T05:28:21.797591Z",
     "source": "news.ysimulator.run"
   }
 }
