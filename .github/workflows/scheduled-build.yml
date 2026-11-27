@@ -19,11 +19,6 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: 📊 Run Meta Analysis
-        run: |
-          python3 scripts/meta-analyzer.py
-          echo "✅ Meta analysis complete"
-
       - name: 🧪 Run Tests
         run: |
           echo "🧪 Running automated tests..."
